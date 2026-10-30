@@ -1,0 +1,2877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BRAVEN Business Center — 3D Metallic Gold PBR Logo</title>
+  <!-- Tailwind CSS for responsive overlay UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Three.js ES Module Import Map (Three.js + OrbitControls + UnrealBloom Post-Processing) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --ui-amp: 1.4;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+      transition: background 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Theme backgrounds */
+    body.bg-luxury {
+      background: radial-gradient(circle at 50% 42%, #1f1910 0%, #0d0a07 55%, #050403 100%);
+    }
+    body.bg-white-studio {
+      background: radial-gradient(circle at 50% 45%, #ffffff 0%, #f5f2eb 65%, #e6dfd1 100%);
+    }
+    body.bg-grid {
+      background: radial-gradient(circle at 50% 45%, #1c1508 0%, #090704 70%, #040302 100%);
+    }
+    body.bg-transparent-grid {
+      background-color: #111113;
+      background-image:
+        linear-gradient(45deg, #1d1d22 25%, transparent 25%),
+        linear-gradient(-45deg, #1d1d22 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1d1d22 75%),
+        linear-gradient(-45deg, transparent 75%, #1d1d22 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+    }
+
+    #braven-3d-widget {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    /* Custom subtle scrollbars for code modal */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 12, 8, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(212, 175, 55, 0.45);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(212, 175, 55, 0.75);
+    }
+
+    /* Smooth transitions for collapsible UI panels */
+    .ui-chrome {
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .signage-hud {
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    /* Pure 3D Zen Mode hides BOTH studio chrome and signage HUD */
+    body.zen-mode .ui-chrome,
+    body.zen-mode .signage-hud {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translateY(14px);
+    }
+    body.zen-mode header.ui-chrome {
+      transform: translateY(-14px);
+    }
+    /* Signage Kiosk Mode hides ONLY studio chrome, keeping 3D Scene + Signage HUD + Nav Buttons */
+    body.kiosk-mode .ui-chrome {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translateY(-12px);
+    }
+
+    /* =========================================================================
+       AGGRESSIVE CAR RACING SCI-FI SMART SIGNAGE & METALLIC GOLD PBR HUD STYLES
+       ========================================================================= */
+    .font-racing-title {
+      font-family: 'Orbitron', 'Chakra Petch', sans-serif;
+    }
+    .font-racing-hud {
+      font-family: 'Chakra Petch', 'Rajdhani', sans-serif;
+    }
+
+    /* Metallic Gold PBR Border & Specular Shimmer matching Poliigon_MetalGoldPaint_7253 */
+    @keyframes pbrGoldSweep {
+      0% { background-position: -220% 0; }
+      100% { background-position: 220% 0; }
+    }
+    @keyframes hazardScroll {
+      0% { background-position: 0 0; }
+      100% { background-position: 48px 0; }
+    }
+    @keyframes nitroPulse {
+      0%, 100% { opacity: 0.35; transform: translateX(0); }
+      50% { opacity: 1; transform: translateX(5px); }
+    }
+
+    /* 3D Extruded Metallic Gold Big Title Typography (CSS PBR + 3D Bevel Stack) */
+    .pbr-gold-big-title {
+      background: linear-gradient(
+        175deg,
+        #ffffff 0%,
+        #fff9db 18%,
+        #f9dc78 40%,
+        #e5b842 56%,
+        #9e7213 76%,
+        #ffea9f 92%,
+        #ffffff 100%
+      );
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      /* Multi-layer 3D metallic gold bevel extrusion + bloom halo */
+      filter:
+        drop-shadow(0px 1px 0px #b88a1e)
+        drop-shadow(0px 2px 0px #8f680d)
+        drop-shadow(0px 3px 0px #634605)
+        drop-shadow(0px 8px 18px rgba(235, 190, 70, 0.45));
+      animation: pbrGoldSweep 6.5s linear infinite;
+    }
+
+    /* Chamfered Metallic Gold PBR Racing Panel Frame */
+    .gold-pbr-panel {
+      position: relative;
+      background:
+        linear-gradient(135deg, rgba(22, 18, 10, 0.92) 0%, rgba(9, 8, 5, 0.90) 60%, rgba(32, 26, 12, 0.92) 100%);
+      border: 2px solid transparent;
+      border-image: linear-gradient(
+        135deg,
+        #fff9d6 0%,
+        #e5b842 28%,
+        #8c640f 52%,
+        #ffe484 78%,
+        #fffbe0 100%
+      ) 1;
+      box-shadow:
+        0 16px 40px -10px rgba(0, 0, 0, 0.85),
+        0 0 28px rgba(230, 185, 77, 0.22),
+        inset 0 1px 0 rgba(255, 249, 210, 0.5),
+        inset 0 0 24px rgba(230, 185, 77, 0.14);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+      transition:
+        transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.3s ease;
+    }
+
+    /* Symmetrical Left & Right Signage Card Dimensions */
+    .signage-sym-column {
+      width: 100%;
+    }
+    @media (min-width: 1024px) {
+      .signage-sym-column {
+        width: clamp(340px, 29vw, 440px);
+        flex: 0 0 clamp(340px, 29vw, 440px);
+      }
+    }
+    .signage-sym-card {
+      min-height: 195px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+    }
+    @media (min-width: 1280px) {
+      .signage-sym-card {
+        min-height: 215px;
+      }
+    }
+
+    /* Animated Specular Light Glint across Gold Panels */
+    .gold-pbr-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        115deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 245, 190, 0.28) 50%,
+        transparent 60%,
+        transparent 100%
+      );
+      background-size: 250% 100%;
+      animation: pbrGoldSweep 4.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Racing Hazard/Telemetry Bottom Stripe on Hover */
+    .gold-pbr-panel::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      background: repeating-linear-gradient(
+        -45deg,
+        #fff0a8,
+        #fff0a8 10px,
+        #8f6810 10px,
+        #8f6810 20px
+      );
+      background-size: 48px 48px;
+      opacity: 0.75;
+      transition: height 0.25s ease, opacity 0.25s ease;
+    }
+
+    /* Aggressive Car Racing Skew & Overdrive Hover Effects (Symmetrical Left & Right) */
+    .racing-skew-left {
+      transform: skewX(-8deg);
+    }
+    .racing-unskew-left {
+      transform: skewX(8deg);
+    }
+    .racing-skew-left:hover {
+      transform: skewX(-8deg) translateX(12px) scale(1.03) !important;
+      box-shadow:
+        -8px 18px 45px rgba(0, 0, 0, 0.9),
+        0 0 38px rgba(245, 208, 96, 0.6),
+        inset 0 0 32px rgba(255, 230, 128, 0.28);
+    }
+    .racing-skew-left:hover::after {
+      height: 6px;
+      opacity: 1;
+      animation: hazardScroll 0.8s linear infinite;
+    }
+
+    .racing-skew-right {
+      transform: skewX(-8deg);
+    }
+    .racing-unskew-right {
+      transform: skewX(8deg);
+    }
+    .racing-skew-right:hover {
+      transform: skewX(-8deg) translateX(-12px) scale(1.03) !important;
+      box-shadow:
+        12px 18px 45px rgba(0, 0, 0, 0.9),
+        0 0 38px rgba(245, 208, 96, 0.6),
+        inset 0 0 32px rgba(255, 230, 128, 0.28);
+    }
+    .racing-skew-right:hover::after {
+      height: 6px;
+      opacity: 1;
+      animation: hazardScroll 0.8s linear infinite;
+    }
+
+    /* Cascading Entry & Whip-Slash Exit Keyframes */
+    @keyframes cascadeSlamLeft {
+      0% {
+        opacity: 0;
+        transform: skewX(-8deg) translateX(-140px) scale(0.92);
+        filter: brightness(2.2) blur(6px);
+      }
+      65% {
+        opacity: 1;
+        transform: skewX(-8deg) translateX(10px) scale(1.02);
+        filter: brightness(1.3) blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: skewX(-8deg) translateX(0px) scale(1);
+        filter: brightness(1) blur(0px);
+      }
+    }
+
+    @keyframes cascadeSlamRight {
+      0% {
+        opacity: 0;
+        transform: skewX(-8deg) translateX(140px) scale(0.92);
+        filter: brightness(2.2) blur(6px);
+      }
+      65% {
+        opacity: 1;
+        transform: skewX(-8deg) translateX(-10px) scale(1.02);
+        filter: brightness(1.3) blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: skewX(-8deg) translateX(0px) scale(1);
+        filter: brightness(1) blur(0px);
+      }
+    }
+
+    @keyframes cascadeWhipOutLeft {
+      0% {
+        opacity: 1;
+        transform: skewX(-8deg) translateX(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: skewX(-20deg) translateX(-160px) scale(0.9);
+        filter: brightness(2) blur(5px);
+      }
+    }
+
+    @keyframes cascadeWhipOutRight {
+      0% {
+        opacity: 1;
+        transform: skewX(-8deg) translateX(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: skewX(-20deg) translateX(160px) scale(0.9);
+        filter: brightness(2) blur(5px);
+      }
+    }
+
+    .cascade-in-left {
+      animation: cascadeSlamLeft 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .cascade-out-left {
+      animation: cascadeWhipOutLeft 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    }
+    .cascade-in-right {
+      animation: cascadeSlamRight 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .cascade-out-right {
+      animation: cascadeWhipOutRight 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    }
+
+    /* Equalizer Animation for Audio Player */
+    @keyframes eqBounce {
+      0%, 100% { height: 4px; }
+      50% { height: 16px; }
+    }
+    .eq-bar-active {
+      animation: eqBounce 0.65s ease-in-out infinite;
+    }
+
+    /* Dynamic UI Animation Amplification Variables for Racing Panels */
+    .racing-skew-left {
+      transform: skewX(calc(-7deg * var(--ui-amp, 1.4)));
+      transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .racing-unskew-left {
+      transform: skewX(calc(7deg * var(--ui-amp, 1.4)));
+    }
+    .racing-skew-left:hover {
+      transform:
+        perspective(900px)
+        skewX(calc(-9deg * var(--ui-amp, 1.4)))
+        translateX(calc(12px * var(--ui-amp, 1.4)))
+        translateY(calc(-4px * var(--ui-amp, 1.4)))
+        rotateY(calc(4deg * var(--ui-amp, 1.4)))
+        scale(calc(1 + 0.032 * var(--ui-amp, 1.4))) !important;
+      box-shadow:
+        -10px 20px 48px rgba(0, 0, 0, 0.92),
+        0 0 calc(34px * var(--ui-amp, 1.4)) rgba(250, 204, 21, 0.72),
+        inset 0 0 calc(28px * var(--ui-amp, 1.4)) rgba(255, 230, 128, 0.35);
+    }
+    .racing-skew-left:hover::after {
+      height: 6px;
+      opacity: 1;
+      animation: hazardScroll 0.65s linear infinite;
+    }
+
+    .racing-skew-right {
+      transform: skewX(calc(-7deg * var(--ui-amp, 1.4)));
+      transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .racing-unskew-right {
+      transform: skewX(calc(7deg * var(--ui-amp, 1.4)));
+    }
+    .racing-skew-right:hover {
+      transform:
+        perspective(900px)
+        skewX(calc(-9deg * var(--ui-amp, 1.4)))
+        translateX(calc(-12px * var(--ui-amp, 1.4)))
+        translateY(calc(-4px * var(--ui-amp, 1.4)))
+        rotateY(calc(-4deg * var(--ui-amp, 1.4)))
+        scale(calc(1 + 0.032 * var(--ui-amp, 1.4))) !important;
+      box-shadow:
+        12px 20px 48px rgba(0, 0, 0, 0.92),
+        0 0 calc(34px * var(--ui-amp, 1.4)) rgba(250, 204, 21, 0.72),
+        inset 0 0 calc(28px * var(--ui-amp, 1.4)) rgba(255, 230, 128, 0.35);
+    }
+    .racing-skew-right:hover::after {
+      height: 6px;
+      opacity: 1;
+      animation: hazardScroll 0.65s linear infinite;
+    }
+
+    /* Amplified Cascading Entry & Whip-Slash Exit Keyframes */
+    @keyframes cascadeSlamLeft {
+      0% {
+        opacity: 0;
+        transform:
+          skewX(calc(-14deg * var(--ui-amp, 1.4)))
+          translateX(calc(-135px * var(--ui-amp, 1.4)))
+          scale(calc(1 - 0.08 * var(--ui-amp, 1.4)));
+        filter: brightness(2.4) blur(6px);
+      }
+      65% {
+        opacity: 1;
+        transform:
+          skewX(calc(-7deg * var(--ui-amp, 1.4)))
+          translateX(calc(11px * var(--ui-amp, 1.4)))
+          scale(calc(1 + 0.024 * var(--ui-amp, 1.4)));
+        filter: brightness(1.35) blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: skewX(calc(-7deg * var(--ui-amp, 1.4))) translateX(0px) scale(1);
+        filter: brightness(1) blur(0px);
+      }
+    }
+
+    @keyframes cascadeSlamRight {
+      0% {
+        opacity: 0;
+        transform:
+          skewX(calc(-14deg * var(--ui-amp, 1.4)))
+          translateX(calc(135px * var(--ui-amp, 1.4)))
+          scale(calc(1 - 0.08 * var(--ui-amp, 1.4)));
+        filter: brightness(2.4) blur(6px);
+      }
+      65% {
+        opacity: 1;
+        transform:
+          skewX(calc(-7deg * var(--ui-amp, 1.4)))
+          translateX(calc(-11px * var(--ui-amp, 1.4)))
+          scale(calc(1 + 0.024 * var(--ui-amp, 1.4)));
+        filter: brightness(1.35) blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: skewX(calc(-7deg * var(--ui-amp, 1.4))) translateX(0px) scale(1);
+        filter: brightness(1) blur(0px);
+      }
+    }
+
+    @keyframes cascadeWhipOutLeft {
+      0% {
+        opacity: 1;
+        transform: skewX(calc(-7deg * var(--ui-amp, 1.4))) translateX(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform:
+          skewX(calc(-20deg * var(--ui-amp, 1.4)))
+          translateX(calc(-150px * var(--ui-amp, 1.4)))
+          scale(0.88);
+        filter: brightness(2.1) blur(5px);
+      }
+    }
+
+    @keyframes cascadeWhipOutRight {
+      0% {
+        opacity: 1;
+        transform: skewX(calc(-7deg * var(--ui-amp, 1.4))) translateX(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform:
+          skewX(calc(-20deg * var(--ui-amp, 1.4)))
+          translateX(calc(150px * var(--ui-amp, 1.4)))
+          scale(0.88);
+        filter: brightness(2.1) blur(5px);
+      }
+    }
+
+    .cascade-in-left {
+      animation: cascadeSlamLeft 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .cascade-out-left {
+      animation: cascadeWhipOutLeft 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    }
+    .cascade-in-right {
+      animation: cascadeSlamRight 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .cascade-out-right {
+      animation: cascadeWhipOutRight 0.22s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    }
+
+    /* Fullscreen Diagonal Gold Speed-Slash Flash on Slide Change */
+    @keyframes speedSlashFlash {
+      0% {
+        opacity: 0;
+        transform: translateX(-110%) skewX(-28deg);
+      }
+      35% {
+        opacity: 0.85;
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(120%) skewX(-28deg);
+      }
+    }
+    .speed-slash-active {
+      animation: speedSlashFlash 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Aggressive Metallic Gold Navigation Buttons */
+    .gold-nav-btn {
+      position: relative;
+      background: linear-gradient(180deg, rgba(42, 30, 12, 0.95) 0%, rgba(15, 11, 5, 0.98) 100%);
+      border: 2px solid #dda146;
+      box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.8),
+        0 0 18px rgba(221, 161, 70, 0.3),
+        inset 0 1px 0 rgba(255, 244, 190, 0.6);
+      transform: skewX(-14deg);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gold-nav-btn:hover {
+      background: linear-gradient(135deg, #ffe89e 0%, #dda146 50%, #b87b19 100%);
+      color: #090603 !important;
+      border-color: #fff6cc;
+      transform: skewX(-14deg) translateY(-3px) scale(1.06);
+      box-shadow:
+        0 12px 32px rgba(221, 161, 70, 0.65),
+        0 0 30px rgba(255, 225, 130, 0.8);
+    }
+    .gold-nav-btn:active {
+      transform: skewX(-14deg) translateY(1px) scale(0.97);
+    }
+  </style>
+</head>
+<body class="bg-luxury text-amber-50">
+
+  <!-- MAIN RESPONSIVE 3D CONTAINER (Drop-in Target) -->
+  <div id="braven-3d-widget" aria-label="Braven Business Center 3D Metallic Gold Logo"></div>
+
+  <!-- DIAGONAL RACING GOLD SPEED-LINES OVERLAY (TRIGGERS ON SLIDE TRANSITION) -->
+  <div id="speed-slash-overlay" class="fixed inset-0 pointer-events-none z-10 overflow-hidden">
+    <div id="speed-slash-bar" class="opacity-0 w-2/3 h-full bg-gradient-to-r from-transparent via-amber-300/35 to-transparent"></div>
+  </div>
+
+  <!-- =========================================================================
+       SMART SIGNAGE SLIDESHOW HUD OVERLAY (AGGRESSIVE CAR RACING TELEMETRY UI)
+       Readable from 5-15m afar • Metallic Gold PBR Frames & 3D Gold Big Titles
+       ========================================================================= -->
+  <section id="smart-signage-hud" class="signage-hud fixed inset-0 z-10 pointer-events-none flex flex-col justify-between p-4 sm:p-6 lg:p-8 overflow-hidden">
+
+    <!-- TOP SIGNAGE TELEMETRY STATUS RIBBON (VISIBLE IN KIOSK & NORMAL VIEW) -->
+    <div class="w-full flex items-center justify-between gap-4 pt-12 sm:pt-11">
+      <!-- Left Racing Telemetry Tachometer & Sector Counter -->
+      <div class="pointer-events-auto hidden sm:flex items-center gap-3 px-4 py-1.5 bg-black/75 border-l-4 border-amber-400 backdrop-blur-md racing-skew-left shadow-lg">
+        <div class="racing-unskew-left flex items-center gap-3">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_#fbbf24] animate-ping"></span>
+          <span id="signage-top-sector" class="font-racing-hud font-bold tracking-[0.22em] text-xs sm:text-sm text-amber-300 uppercase">
+            SECTOR 01 // 06
+          </span>
+          <div class="h-3.5 w-[1px] bg-amber-500/40"></div>
+          <!-- Segmented Gold RPM Bar -->
+          <div id="rpm-bars-container" class="flex items-center gap-1">
+            <span class="rpm-seg w-2.5 h-3 bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            <span class="rpm-seg w-2.5 h-3 bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            <span class="rpm-seg w-2.5 h-3 bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            <span class="rpm-seg w-2.5 h-3 bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            <span class="rpm-seg w-2.5 h-3 bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            <span class="rpm-seg w-2.5 h-3 bg-amber-300 shadow-[0_0_10px_#fde047]"></span>
+            <span class="rpm-seg w-2.5 h-3 bg-amber-200 shadow-[0_0_12px_#fef08a]"></span>
+            <span class="rpm-seg w-2.5 h-3 bg-white shadow-[0_0_14px_#ffffff]"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Live Telemetry Metric Pill -->
+      <div id="signage-metric-pill" class="pointer-events-auto ml-auto flex items-center gap-2.5 px-4 py-1.5 gold-pbr-panel racing-skew-left cursor-pointer">
+        <div class="racing-unskew-left flex items-center gap-2.5 relative z-10">
+          <span class="text-[11px] font-racing-hud uppercase tracking-[0.2em] text-amber-200/80">SECTOR STATUS</span>
+          <span id="signage-metric-text" class="font-racing-title font-extrabold text-sm sm:text-base tracking-wider text-yellow-300 drop-shadow-[0_0_10px_rgba(253,224,71,0.8)]">
+            READY IN 24H
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE SHOWROOM ROW: 100% SYMMETRICAL LEFT COLUMN (2 BIG GOLD CARDS) & RIGHT COLUMN (2 BIG GOLD CARDS) -->
+    <div class="w-full my-auto flex flex-col lg:flex-row items-stretch justify-between gap-5 lg:gap-8 pb-14 sm:pb-12">
+
+      <!-- LEFT SYMMETRICAL COLUMN (CARDS L1 & L2) -->
+      <div class="signage-sym-column pointer-events-auto flex flex-col justify-center gap-4 sm:gap-5">
+        <!-- CARD L1 (PRIMARY SERVICE TITLE) -->
+        <div id="sym-card-0" class="gold-pbr-panel signage-sym-card racing-skew-left p-5 sm:p-6 cursor-pointer cascade-in-left" style="animation-delay: 0.03s;">
+          <span class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-yellow-300 opacity-85"></span>
+
+          <div class="racing-unskew-left relative z-10 flex flex-col h-full justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/20 border border-yellow-400/60">
+                <span class="w-2 h-2 bg-yellow-300 rotate-45 shadow-[0_0_8px_#fde047]"></span>
+                <span id="card-badge-0" class="font-racing-hud font-bold text-xs sm:text-sm tracking-[0.22em] text-yellow-200 uppercase">
+                  01 // EXECUTIVE SUITES
+                </span>
+              </div>
+              <div class="flex items-center gap-0.5 text-yellow-300 font-racing-title text-sm font-black">
+                <span class="animate-[nitroPulse_1s_infinite]">»</span>
+                <span class="animate-[nitroPulse_1s_infinite_0.15s]">»</span>
+                <span class="animate-[nitroPulse_1s_infinite_0.3s]">»</span>
+              </div>
+            </div>
+
+            <h2 id="card-title-0" class="font-racing-title font-black uppercase tracking-tight leading-[1.02] text-2xl sm:text-3xl xl:text-[34px] pbr-gold-big-title my-2">
+              TURNKEY LUXURY OFFICES
+            </h2>
+
+            <div class="flex items-center gap-3 pt-1">
+              <div class="h-5 w-1.5 bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 shadow-[0_0_10px_#facc15]"></div>
+              <p id="card-sub-0" class="font-racing-hud font-bold text-sm sm:text-lg tracking-[0.14em] text-amber-50 uppercase">
+                ZERO SETUP DELAY • FULL PRESTIGE
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD L2 (SECONDARY HIGH-IMPACT FEATURE) -->
+        <div id="sym-card-1" class="gold-pbr-panel signage-sym-card racing-skew-left p-5 sm:p-6 cursor-pointer cascade-in-left" style="animation-delay: 0.11s;">
+          <span class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-yellow-300 opacity-85"></span>
+
+          <div class="racing-unskew-left relative z-10 flex flex-col h-full justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/20 border border-yellow-400/60">
+                <span class="w-2 h-2 bg-yellow-300 rotate-45 shadow-[0_0_8px_#fde047]"></span>
+                <span id="card-badge-1" class="font-racing-hud font-bold text-xs sm:text-sm tracking-[0.22em] text-yellow-200 uppercase">
+                  02 // SECURITY & ACCESS
+                </span>
+              </div>
+              <span class="text-yellow-300 font-racing-title font-bold text-base">◢</span>
+            </div>
+
+            <h2 id="card-title-1" class="font-racing-title font-black uppercase tracking-tight leading-[1.02] text-2xl sm:text-3xl xl:text-[34px] pbr-gold-big-title my-2">
+              24/7 BIOMETRIC ACCESS
+            </h2>
+
+            <div class="flex items-center gap-3 pt-1">
+              <div class="h-5 w-1.5 bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 shadow-[0_0_10px_#facc15]"></div>
+              <p id="card-sub-1" class="font-racing-hud font-bold text-sm sm:text-lg tracking-[0.14em] text-amber-50 uppercase">
+                PRIVATE VIP ELEVATOR & SECURITY
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SYMMETRICAL COLUMN (CARDS R1 & R2 — IDENTICAL DIMENSIONS TO LEFT) -->
+      <div class="signage-sym-column pointer-events-auto flex flex-col justify-center gap-4 sm:gap-5">
+        <!-- CARD R1 (TERTIARY HIGH-IMPACT FEATURE) -->
+        <div id="sym-card-2" class="gold-pbr-panel signage-sym-card racing-skew-right p-5 sm:p-6 cursor-pointer cascade-in-right" style="animation-delay: 0.07s;">
+          <span class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-yellow-300 opacity-85"></span>
+
+          <div class="racing-unskew-right relative z-10 flex flex-col h-full justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/20 border border-yellow-400/60">
+                <span class="w-2 h-2 bg-yellow-300 rotate-45 shadow-[0_0_8px_#fde047]"></span>
+                <span id="card-badge-2" class="font-racing-hud font-bold text-xs sm:text-sm tracking-[0.22em] text-yellow-200 uppercase">
+                  03 // ARCHITECTURE
+                </span>
+              </div>
+              <div class="flex items-center gap-0.5 text-yellow-300 font-racing-title text-sm font-black">
+                <span class="animate-[nitroPulse_1s_infinite]">»</span>
+                <span class="animate-[nitroPulse_1s_infinite_0.15s]">»</span>
+                <span class="animate-[nitroPulse_1s_infinite_0.3s]">»</span>
+              </div>
+            </div>
+
+            <h2 id="card-title-2" class="font-racing-title font-black uppercase tracking-tight leading-[1.02] text-2xl sm:text-3xl xl:text-[34px] pbr-gold-big-title my-2">
+              PENTHOUSE SKYLINE VIEWS
+            </h2>
+
+            <div class="flex items-center gap-3 pt-1">
+              <div class="h-5 w-1.5 bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 shadow-[0_0_10px_#facc15]"></div>
+              <p id="card-sub-2" class="font-racing-hud font-bold text-sm sm:text-lg tracking-[0.14em] text-amber-50 uppercase">
+                FLOOR-TO-CEILING ACOUSTIC GLASS
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD R2 (QUATERNARY HIGH-IMPACT FEATURE) -->
+        <div id="sym-card-3" class="gold-pbr-panel signage-sym-card racing-skew-right p-5 sm:p-6 cursor-pointer cascade-in-right" style="animation-delay: 0.15s;">
+          <span class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-yellow-300 opacity-85"></span>
+          <span class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-yellow-300 opacity-85"></span>
+
+          <div class="racing-unskew-right relative z-10 flex flex-col h-full justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/20 border border-yellow-400/60">
+                <span class="w-2 h-2 bg-yellow-300 rotate-45 shadow-[0_0_8px_#fde047]"></span>
+                <span id="card-badge-3" class="font-racing-hud font-bold text-xs sm:text-sm tracking-[0.22em] text-yellow-200 uppercase">
+                  04 // INSTANT DEPLOYMENT
+                </span>
+              </div>
+              <span class="text-yellow-300 font-racing-title font-bold text-base">◢</span>
+            </div>
+
+            <h2 id="card-title-3" class="font-racing-title font-black uppercase tracking-tight leading-[1.02] text-2xl sm:text-3xl xl:text-[34px] pbr-gold-big-title my-2">
+              100% MOVE-IN READY
+            </h2>
+
+            <div class="flex items-center gap-3 pt-1">
+              <div class="h-5 w-1.5 bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 shadow-[0_0_10px_#facc15]"></div>
+              <p id="card-sub-3" class="font-racing-hud font-bold text-sm sm:text-lg tracking-[0.14em] text-amber-50 uppercase">
+                BESPOKE EXECUTIVE FURNITURE
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM SIGNAGE NAVIGATION DECK (TWO PROMINENT RACING NAV BUTTONS + AUTOPLAY RPM BAR) -->
+    <div class="w-full flex flex-col items-center justify-end gap-2 pointer-events-none">
+      <div class="pointer-events-auto flex flex-wrap items-center justify-center gap-3 sm:gap-5 px-4 py-2.5 bg-black/80 border border-amber-500/40 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.9)]">
+        <!-- PREV BUTTON -->
+        <button id="btn-prev-slide" type="button" class="gold-nav-btn px-5 sm:px-7 py-2.5 text-amber-200 font-racing-title font-black text-xs sm:text-sm tracking-[0.2em] uppercase cursor-pointer">
+          <span class="inline-block skew-x-[14deg]">◄ PREV</span>
+        </button>
+
+        <!-- CENTER SLIDE DOTS + AUTOPLAY TACHOMETER BAR -->
+        <div class="flex flex-col items-center gap-1.5 min-w-[180px] sm:min-w-[240px]">
+          <div class="w-full flex items-center justify-between text-[10px] font-racing-hud tracking-[0.2em] text-amber-300/90 uppercase">
+            <button id="btn-toggle-autoplay" type="button" class="flex items-center gap-1.5 hover:text-white transition cursor-pointer">
+              <span id="autoplay-dot" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+              <span id="autoplay-label">AUTOPLAY: ON</span>
+            </button>
+            <span id="slide-counter-readout" class="font-bold text-amber-200">01 / 06</span>
+          </div>
+
+          <!-- Progress Track -->
+          <div class="w-full h-2 bg-amber-950/80 border border-amber-500/40 overflow-hidden p-[1px]">
+            <div id="autoplay-progress-bar" class="h-full bg-gradient-to-r from-amber-500 via-yellow-300 to-white shadow-[0_0_12px_#fde047] transition-none" style="width: 0%;"></div>
+          </div>
+
+          <!-- 6 Quick Sector Indicators -->
+          <div id="slide-dots-row" class="flex items-center gap-1.5 pt-0.5"></div>
+        </div>
+
+        <!-- NEXT BUTTON -->
+        <button id="btn-next-slide" type="button" class="gold-nav-btn px-5 sm:px-7 py-2.5 text-amber-200 font-racing-title font-black text-xs sm:text-sm tracking-[0.2em] uppercase cursor-pointer">
+          <span class="inline-block skew-x-[14deg]">NEXT ►</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       TOP STUDIO & VIEW MODE BAR (COLLAPSIBLE CHROME)
+       ========================================================================= -->
+  <header class="ui-chrome fixed top-0 left-0 right-0 z-30 flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-black/75 border-b border-amber-500/25 backdrop-blur-md">
+    <!-- Brand Badge -->
+    <div class="flex items-center gap-3">
+      <div class="w-3 h-3 rotate-45 bg-gradient-to-tr from-amber-500 to-yellow-200 shadow-[0_0_10px_#fbbf24]"></div>
+      <div>
+        <span class="font-racing-title font-extrabold text-xs sm:text-sm tracking-[0.18em] text-amber-200">BRAVEN 3D GOLD PBR</span>
+        <span class="hidden md:inline-block ml-2 text-[11px] px-2 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-amber-300 font-mono">
+          Poliigon_MetalGoldPaint_7253
+        </span>
+      </div>
+    </div>
+
+    <!-- Right Mode Toggles -->
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Quick Music Status / Toggle Studio Sliders Drawer -->
+      <button id="btn-toggle-studio" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-amber-500/25 hover:bg-amber-500/40 text-yellow-200 border border-yellow-400/50 transition cursor-pointer flex items-center gap-1.5">
+        <span>⚙ Studio &amp; Music Controls</span>
+      </button>
+
+      <!-- Toggle Signage HUD On/Off -->
+      <button id="btn-toggle-signage" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-amber-400 text-black font-bold hover:bg-amber-300 transition cursor-pointer">
+        Signage HUD: ON
+      </button>
+
+      <!-- Signage Kiosk Fullscreen Mode (Hides Top/Bottom Studio Chrome, keeps 3D + Signage) -->
+      <button id="btn-kiosk-mode" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-zinc-900/90 hover:bg-zinc-800 text-amber-200 border border-amber-500/35 transition cursor-pointer">
+        Signage Kiosk
+      </button>
+
+      <!-- Pure 3D Only (Zen Mode) -->
+      <button id="btn-zen-mode" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-zinc-900/90 hover:bg-zinc-800 text-amber-200 border border-amber-500/35 transition cursor-pointer" title="Hide all UI and Signage to view only the 3D scene (Shortcut: H)">
+        Pure 3D Only (H)
+      </button>
+
+      <!-- Copy Embed Code Modal Button -->
+      <button id="btn-open-embed" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-gradient-to-r from-amber-500 to-yellow-300 text-black font-bold hover:brightness-110 transition cursor-pointer">
+        &lt;/&gt; Copy Embed Code
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       COLLAPSIBLE STUDIO SLIDERS DRAWER (MUSIC PLAYER, XYZ POSE, FLOAT, RINGS, BLOOM)
+       ========================================================================= -->
+  <aside id="studio-sliders-drawer" class="ui-chrome fixed top-14 right-4 z-30 w-[340px] sm:w-[385px] max-h-[calc(100vh-80px)] overflow-y-auto rounded-xl bg-zinc-950/95 border border-yellow-500/45 shadow-[0_20px_50px_rgba(0,0,0,0.95)] backdrop-blur-xl p-4 transition-all duration-300 transform translate-x-0 opacity-100 pointer-events-auto">
+    <div class="flex items-center justify-between pb-3 mb-3 border-b border-amber-500/25">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+        <h2 class="font-racing-title text-xs font-bold tracking-[0.18em] text-yellow-200 uppercase">
+          3D Studio &amp; Audio Dock
+        </h2>
+      </div>
+      <button id="btn-close-studio" type="button" class="text-xs text-amber-300/80 hover:text-yellow-200 px-2.5 py-0.5 rounded border border-amber-500/40 cursor-pointer">
+        Minimize ▲
+      </button>
+    </div>
+
+    <!-- SECTION 0: DUAL-ENGINE LOOPING MUSIC PLAYER (YouTube ffCAdXPO0K0 + Built-In Afrobeat Synth) -->
+    <div class="space-y-2.5 pb-4 mb-4 border-b border-yellow-500/25 bg-gradient-to-br from-yellow-500/10 via-amber-950/30 to-black/60 p-3 rounded-lg border border-yellow-400/30">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <!-- Animated Gold Equalizer Bars -->
+          <div id="music-eq-bars" class="flex items-end gap-0.5 h-4">
+            <span class="eq-bar w-1 bg-yellow-400 eq-bar-active" style="animation-delay: 0s;"></span>
+            <span class="eq-bar w-1 bg-yellow-300 eq-bar-active" style="animation-delay: 0.18s;"></span>
+            <span class="eq-bar w-1 bg-yellow-400 eq-bar-active" style="animation-delay: 0.32s;"></span>
+            <span class="eq-bar w-1 bg-yellow-200 eq-bar-active" style="animation-delay: 0.12s;"></span>
+          </div>
+          <span class="text-[11px] font-racing-title font-bold uppercase tracking-wider text-yellow-300">
+            Soundtrack Player
+          </span>
+        </div>
+        <span id="music-status-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+          READY • LOOP
+        </span>
+      </div>
+
+      <div class="flex items-center justify-between gap-2 text-[11px] text-amber-100/90 font-medium">
+        <span class="truncate" title="AFROBEAT Vibes – Billionaire Energy (ffCAdXPO0K0)">
+          🎵 Afrobeat Billionaire (<span class="font-mono text-yellow-300">ffCAdXPO0K0</span>)
+        </span>
+        <!-- Audio Engine Selector -->
+        <select id="select-audio-engine" class="bg-zinc-900 text-yellow-200 border border-yellow-400/40 rounded px-1.5 py-0.5 text-[10px] font-mono cursor-pointer">
+          <option value="hybrid" selected>Auto Hybrid</option>
+          <option value="synth">Afrobeat Synth</option>
+          <option value="youtube">YouTube Only</option>
+        </select>
+      </div>
+
+      <!-- Play / Stop / Loop Buttons -->
+      <div class="grid grid-cols-3 gap-2 pt-1">
+        <button id="btn-music-play" type="button" class="px-2.5 py-1.5 rounded bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-racing-title font-bold text-xs uppercase tracking-wider hover:brightness-110 transition cursor-pointer shadow-[0_0_12px_rgba(250,204,21,0.4)]">
+          ▶ Play
+        </button>
+        <button id="btn-music-stop" type="button" class="px-2.5 py-1.5 rounded bg-zinc-900 hover:bg-red-950/80 text-amber-100 hover:text-red-200 border border-amber-500/35 font-racing-title font-bold text-xs uppercase tracking-wider transition cursor-pointer">
+          ■ Stop
+        </button>
+        <button id="btn-music-loop" type="button" class="px-2.5 py-1.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 border border-yellow-400/50 font-racing-title font-bold text-[11px] uppercase tracking-wider transition cursor-pointer">
+          🔁 Loop: ON
+        </button>
+      </div>
+
+      <!-- Volume Slider -->
+      <div class="pt-1">
+        <div class="flex justify-between text-[11px] text-amber-100/80 mb-0.5">
+          <span>Music Volume</span>
+          <span id="val-music-vol" class="font-mono text-yellow-300">75%</span>
+        </div>
+        <input id="slider-music-vol" type="range" min="0" max="100" step="1" value="75" class="w-full accent-yellow-400 cursor-pointer" />
+      </div>
+
+      <!-- Visible Mini YouTube Audio Deck (prevents browser off-screen media throttling) -->
+      <div class="relative w-full h-9 rounded overflow-hidden bg-black/75 border border-yellow-500/25 flex items-center justify-between px-2">
+        <span class="text-[10px] font-mono text-amber-200/75 z-10 pointer-events-none">YT Stream Deck (ffCAdXPO0K0)</span>
+        <div class="w-28 h-8 overflow-hidden rounded opacity-85">
+          <div id="yt-audio-player"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 0B: SMART SIGNAGE SLIDESHOW SPEED & UI ANIMATION AMPLIFICATION -->
+    <div class="space-y-2.5 pb-4 mb-4 border-b border-amber-500/20">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-yellow-300">Signage Speed &amp; Racing UI Amp</span>
+        <button id="btn-test-transition" type="button" class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/25 hover:bg-yellow-500/40 text-yellow-200 border border-yellow-400/50 font-semibold cursor-pointer">
+          ⚡ Test Transition
+        </button>
+      </div>
+
+      <!-- Slideshow Speed (Slide Duration in Seconds) -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Slideshow Speed (Slide Duration)</span>
+          <span id="val-slide-speed" class="font-mono text-yellow-300">7.0s</span>
+        </div>
+        <input id="slider-slide-speed" type="range" min="2.0" max="16.0" step="0.5" value="7.0" class="w-full accent-yellow-400 cursor-pointer" />
+      </div>
+
+      <!-- UI Animation Amplification (Hover & Transition Intensity) -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>UI Animation Amplification</span>
+          <span id="val-ui-amp" class="font-mono text-yellow-300">1.40x</span>
+        </div>
+        <input id="slider-ui-amp" type="range" min="0.2" max="3.0" step="0.1" value="1.4" class="w-full accent-yellow-400 cursor-pointer" />
+      </div>
+    </div>
+
+    <!-- SECTION 1: LOGO XYZ ROTATION POSE & FLOATING ANIMATION -->
+    <div class="space-y-2.5 pb-4 mb-4 border-b border-amber-500/20">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-300">1. Logo XYZ Pose & Float</span>
+        <button id="btn-reset-pose" type="button" class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-200 border border-amber-500/30 cursor-pointer">
+          Reset Pose (0°)
+        </button>
+      </div>
+
+      <!-- Pose X (Pitch) -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Pose X (Pitch)</span>
+          <span id="val-pose-x" class="font-mono text-amber-300">0°</span>
+        </div>
+        <input id="slider-pose-x" type="range" min="-180" max="180" step="1" value="0" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Pose Y (Yaw) -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Pose Y (Yaw)</span>
+          <span id="val-pose-y" class="font-mono text-amber-300">0°</span>
+        </div>
+        <input id="slider-pose-y" type="range" min="-180" max="180" step="1" value="0" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Pose Z (Roll) -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Pose Z (Roll)</span>
+          <span id="val-pose-z" class="font-mono text-amber-300">0°</span>
+        </div>
+        <input id="slider-pose-z" type="range" min="-180" max="180" step="1" value="0" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Float Speed & Float Amplitude -->
+      <div class="grid grid-cols-2 gap-3 pt-1">
+        <div>
+          <div class="flex justify-between text-[11px] text-amber-100/80 mb-0.5">
+            <span>Float Speed</span>
+            <span id="val-float-speed" class="font-mono text-amber-300">1.4x</span>
+          </div>
+          <input id="slider-float-speed" type="range" min="0" max="4" step="0.1" value="1.4" class="w-full accent-amber-400 cursor-pointer" />
+        </div>
+        <div>
+          <div class="flex justify-between text-[11px] text-amber-100/80 mb-0.5">
+            <span>Float Height</span>
+            <span id="val-float-amp" class="font-mono text-amber-300">0.22</span>
+          </div>
+          <input id="slider-float-amp" type="range" min="0" max="0.8" step="0.02" value="0.22" class="w-full accent-amber-400 cursor-pointer" />
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: LOGO SIZE & INDIVIDUAL PERPENDICULAR RING RADII -->
+    <div class="space-y-2.5 pb-4 mb-4 border-b border-amber-500/20">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-300">2. Logo Size & 90° Ring Radii</span>
+        <span class="text-[10px] font-mono text-amber-400/80">X ⊥ Y ⊥ Z</span>
+      </div>
+
+      <!-- Logo Scale -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>3D Logo Scale</span>
+          <span id="val-logo-scale" class="font-mono text-amber-300">1.00x</span>
+        </div>
+        <input id="slider-logo-scale" type="range" min="0.4" max="1.8" step="0.02" value="1.00" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Ring 1 Radius (X-Axis) -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Ring 1 Radius (X-Axis)</span>
+          <span id="val-ring1-rad" class="font-mono text-amber-300">3.55</span>
+        </div>
+        <input id="slider-ring1-rad" type="range" min="2.2" max="6.2" step="0.05" value="3.55" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Ring 2 Radius (Y-Axis 90° Perpendicular) -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Ring 2 Radius (Y-Axis ⊥)</span>
+          <span id="val-ring2-rad" class="font-mono text-amber-300">4.05</span>
+        </div>
+        <input id="slider-ring2-rad" type="range" min="2.2" max="6.5" step="0.05" value="4.05" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Ring 3 Radius (Z-Axis 90° Perpendicular) -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Ring 3 Radius (Z-Axis ⊥)</span>
+          <span id="val-ring3-rad" class="font-mono text-amber-300">4.55</span>
+        </div>
+        <input id="slider-ring3-rad" type="range" min="2.2" max="6.8" step="0.05" value="4.55" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Ring Orbit Speed -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Rings Rotation Speed</span>
+          <span id="val-ring-speed" class="font-mono text-amber-300">1.00x</span>
+        </div>
+        <input id="slider-ring-speed" type="range" min="0" max="3" step="0.05" value="1.00" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+    </div>
+
+    <!-- SECTION 3: UNREAL BLOOM & GOLD PBR MATERIAL CONTROLS -->
+    <div class="space-y-2.5">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-300">3. Gold PBR & Unreal Bloom</span>
+      </div>
+
+      <!-- Bloom Strength -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Bloom Glow Intensity</span>
+          <span id="val-bloom-strength" class="font-mono text-amber-300">0.55</span>
+        </div>
+        <input id="slider-bloom-strength" type="range" min="0" max="2.2" step="0.05" value="0.55" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Bloom Radius -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Bloom Halo Radius</span>
+          <span id="val-bloom-radius" class="font-mono text-amber-300">0.65</span>
+        </div>
+        <input id="slider-bloom-radius" type="range" min="0" max="1.5" step="0.05" value="0.65" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- PBR Normal Micro-Flake Relief -->
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Gold Normal Map Relief</span>
+          <span id="val-normal-scale" class="font-mono text-amber-300">1.00</span>
+        </div>
+        <input id="slider-normal-scale" type="range" min="0" max="2.5" step="0.05" value="1.00" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <!-- Backdrop Theme Switcher (WebGL + 3D Scene + CSS) -->
+      <div class="pt-2">
+        <div class="flex justify-between text-xs text-amber-100/80 mb-1.5">
+          <span>3D Studio Backdrop</span>
+          <span id="val-backdrop-mode" class="font-mono text-yellow-300 text-[11px]">Obsidian</span>
+        </div>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button type="button" data-bg="obsidian" class="bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-amber-500/35 border border-yellow-400 text-yellow-100 cursor-pointer">Obsidian</button>
+          <button type="button" data-bg="marble" class="bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-zinc-800/90 border border-zinc-700 text-amber-100 hover:border-yellow-400/50 cursor-pointer">Marble</button>
+          <button type="button" data-bg="grid" class="bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-zinc-800/90 border border-zinc-700 text-amber-100 hover:border-yellow-400/50 cursor-pointer">Gold Grid</button>
+          <button type="button" data-bg="alpha" class="bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-zinc-800/90 border border-zinc-700 text-amber-100 hover:border-yellow-400/50 cursor-pointer">Alpha</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- FLOATING RESTORE BUTTON (VISIBLE WHEN IN PURE 3D ZEN MODE OR KIOSK MODE) -->
+  <button id="btn-restore-ui" type="button" class="fixed bottom-4 right-4 z-40 hidden items-center gap-2 px-4 py-2 rounded-full bg-black/85 border border-amber-400/70 text-amber-200 text-xs font-racing-title uppercase tracking-wider shadow-[0_0_25px_rgba(221,161,70,0.5)] hover:bg-amber-400 hover:text-black transition cursor-pointer">
+    <span>👁 Restore Studio UI</span>
+  </button>
+
+  <!-- =========================================================================
+       EMBED CODE GENERATOR MODAL
+       ========================================================================= -->
+  <div id="embed-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="w-full max-w-2xl rounded-2xl bg-zinc-950 border border-amber-500/50 shadow-[0_25px_70px_rgba(0,0,0,0.95)] p-6">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-amber-500/25">
+        <div>
+          <h3 class="font-racing-title text-sm sm:text-base font-bold text-amber-300 uppercase tracking-wider">
+            Injectable 3D Gold Logo + Smart Signage Snippet
+          </h3>
+          <p class="text-xs text-amber-100/70 mt-0.5">
+            Drop this responsive snippet into any HTML page. Includes your current Pose, Ring Radii, and Bloom settings.
+          </p>
+        </div>
+        <button id="btn-close-embed" type="button" class="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-200 cursor-pointer">
+          ✕ Close
+        </button>
+      </div>
+
+      <textarea id="embed-code-textarea" readonly class="w-full h-64 p-3 rounded-lg bg-black/90 border border-amber-500/30 font-mono text-xs text-amber-200 focus:outline-none"></textarea>
+
+      <div class="flex items-center justify-between mt-4">
+        <span id="copy-feedback" class="text-xs text-emerald-400 font-medium opacity-0 transition">✓ Copied to clipboard!</span>
+        <button id="btn-copy-snippet" type="button" class="px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-300 text-black font-bold text-xs uppercase tracking-wider hover:brightness-110 transition cursor-pointer">
+          Copy HTML Snippet
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MAIN THREE.JS 3D SCENE, PBR GENERATOR, GEOMETRY & SMART SIGNAGE ENGINE
+       ========================================================================= -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    // -------------------------------------------------------------------------
+    // 1. STATE & SYMMETRICAL 2x2 SMART SIGNAGE SLIDE DATA (6 SERVICES)
+    // -------------------------------------------------------------------------
+    const state = {
+      poseX: 0,
+      poseY: 0,
+      poseZ: 0,
+      floatSpeed: 1.4,
+      floatAmp: 0.22,
+      logoScale: 1.0,
+      ringRadii: [3.55, 4.05, 4.55],
+      ringSpeed: 1.0,
+      bloomStrength: 0.45,
+      bloomRadius: 0.60,
+      normalScale: 1.0,
+      autoplay: true,
+      slideDuration: 7.0, // seconds per slide (controlled by Slideshow Speed slider)
+      uiAmp: 1.4, // UI Animation Amplification factor (0.2x - 3.0x)
+      backdropMode: 'obsidian', // 'obsidian' | 'marble' | 'grid' | 'alpha'
+      currentSlide: 0,
+      nitroSpinBoost: 0.0, // spikes on slide transition for racing feel
+      choreoPose: { x: 0, y: 0, z: 0 }
+    };
+
+    // Each slide has 4 symmetrical high-impact cards: 2 on Left (cards[0..1]) and 2 on Right (cards[2..3])
+    const SIGNAGE_SLIDES = [
+      {
+        sector: 'SECTOR 01 // 06',
+        metric: 'READY IN 24H',
+        choreo: { x: 4, y: -12, z: 0 },
+        cards: [
+          { badge: '01 // EXECUTIVE SUITES', title: 'TURNKEY LUXURY OFFICES', sub: 'ZERO SETUP DELAY • FULL PRESTIGE' },
+          { badge: '02 // SECURITY & ACCESS', title: '24/7 BIOMETRIC ACCESS', sub: 'PRIVATE VIP ELEVATOR & SECURITY' },
+          { badge: '03 // ARCHITECTURE', title: 'PENTHOUSE SKYLINE VIEWS', sub: 'FLOOR-TO-CEILING ACOUSTIC GLASS' },
+          { badge: '04 // INSTANT DEPLOYMENT', title: '100% MOVE-IN READY', sub: 'BESPOKE EXECUTIVE FURNITURE' }
+        ]
+      },
+      {
+        sector: 'SECTOR 02 // 06',
+        metric: '4K LASER AV',
+        choreo: { x: -4, y: 14, z: 1 },
+        cards: [
+          { badge: '01 // SMART BOARDROOMS', title: 'HIGH-IMPACT MEETINGS', sub: 'COMMAND EVERY NEGOTIATION' },
+          { badge: '02 // VISUAL TELEMETRY', title: '4K LASER VIDEO WALLS', sub: 'WIRELESS INSTANT SCREENCAST' },
+          { badge: '03 // SOUND ENGINEERING', title: 'STUDIO ACOUSTIC SEAL', sub: '100% CONFIDENTIAL BOARDROOMS' },
+          { badge: '04 // HOSPITALITY', title: 'VIP CATERING SERVICE', sub: 'DEDICATED BARISTA & STEWARD' }
+        ]
+      },
+      {
+        sector: 'SECTOR 03 // 06',
+        metric: 'PRIME LEGAL HQ',
+        choreo: { x: 5, y: -10, z: -1 },
+        cards: [
+          { badge: '01 // VIRTUAL HQ', title: 'PRESTIGE ADDRESS', sub: 'INSTANT CORPORATE AUTHORITY' },
+          { badge: '02 // DOMICILIATION', title: 'FAST LEGAL REGISTRATION', sub: 'COMPLIANT COMMERCIAL DOMICILE' },
+          { badge: '03 // LOGISTICS DESK', title: 'VIP MAIL & COURIER', sub: 'DIGITAL SCAN & GLOBAL FORWARDING' },
+          { badge: '04 // FRONT DESK', title: 'LIVE MULTILINGUAL RECEPTION', sub: 'DEDICATED EXECUTIVE CALL HANDLING' }
+        ]
+      },
+      {
+        sector: 'SECTOR 04 // 06',
+        metric: '10 GBPS FIBER',
+        choreo: { x: -3, y: -15, z: 1 },
+        cards: [
+          { badge: '01 // COWORKING LOUNGE', title: 'ELITE NETWORKING HUB', sub: 'BUILT FOR HIGH-GROWTH FOUNDERS' },
+          { badge: '02 // CONNECTIVITY', title: '10 GBPS DUAL-FIBER', sub: 'ZERO-LATENCY REDUNDANT BACKBONE' },
+          { badge: '03 // FOCUS ZONES', title: 'PRIVATE SOUND PODS', sub: 'CRYSTAL-CLEAR EXECUTIVE CALLS' },
+          { badge: '04 // SKY CLUB', title: 'ARTISAN ESPRESSO BAR', sub: 'CURATED MEMBER DEAL-FLOW EVENTS' }
+        ]
+      },
+      {
+        sector: 'SECTOR 05 // 06',
+        metric: '24/7 VIP DESK',
+        choreo: { x: 3, y: 12, z: -1 },
+        cards: [
+          { badge: '01 // PRO CONCIERGE', title: 'ZERO-FRICTION OPS', sub: 'WE RUN THE BACKOFFICE FOR YOU' },
+          { badge: '02 // ADVISORY', title: 'LEGAL & TAX DESK', sub: 'CORPORATE LICENSING & COMPLIANCE' },
+          { badge: '03 // TECH OPS', title: '24/7 ON-SITE IT CREW', sub: 'DEDICATED CYBER & CLOUD SUPPORT' },
+          { badge: '04 // MOBILITY', title: 'VIP CHAUFFEUR PROTOCOL', sub: 'AIRPORT TRANSFER & HOTEL BOOKING' }
+        ]
+      },
+      {
+        sector: 'SECTOR 06 // 06',
+        metric: '200-SEAT ARENA',
+        choreo: { x: 0, y: 0, z: 0 },
+        cards: [
+          { badge: '01 // SUMMIT ARENA', title: 'CORPORATE LAUNCHPAD', sub: 'STAGE UNFORGETTABLE KEYNOTES' },
+          { badge: '02 // CAPACITY', title: '200-SEAT AUDITORIUM', sub: 'DOLBY ATMOS CINEMA ACOUSTICS' },
+          { badge: '03 // BROADCAST', title: '4K MULTI-CAM STUDIO', sub: 'GLOBAL LIVE STREAM PRODUCTION' },
+          { badge: '04 // GALA LOUNGE', title: 'FIVE-STAR BANQUET HALL', sub: 'PRIVATE ROOFTOP NETWORKING DECK' }
+        ]
+      }
+    ];
+
+    // -------------------------------------------------------------------------
+    // 2. INITIALIZE THREE.JS RENDERER, SCENE, CAMERA & HIGH-DPI MSAA COMPOSER
+    // -------------------------------------------------------------------------
+    const container = document.getElementById('braven-3d-widget');
+    const getSafeWidth = () => Math.max(container.clientWidth || window.innerWidth || 1280, 320);
+    const getSafeHeight = () => Math.max(container.clientHeight || window.innerHeight || 720, 240);
+    const getPixelRatio = () => Math.min(window.devicePixelRatio || 1, 2);
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(38, getSafeWidth() / getSafeHeight(), 0.1, 100);
+    camera.position.set(0, 0.15, 13.8);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    const initialPR = getPixelRatio();
+    renderer.setPixelRatio(initialPR);
+    renderer.setSize(getSafeWidth(), getSafeHeight());
+    // Neutral-warm tone mapping so 24K yellow-champagne gold never shifts reddish/copper
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    // Studio Environment Reflection Map for realistic 24K Gold PBR
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    const roomEnv = new RoomEnvironment();
+    scene.environment = pmremGenerator.fromScene(roomEnv, 0.035).texture;
+
+    // High-DPI Multi-Sampled (4x MSAA) RenderTarget prevents any post-processing pixelation!
+    const msaaRenderTarget = new THREE.WebGLRenderTarget(
+      getSafeWidth() * initialPR,
+      getSafeHeight() * initialPR,
+      {
+        samples: 4,
+        type: THREE.HalfFloatType,
+        format: THREE.RGBAFormat
+      }
+    );
+
+    const composer = new EffectComposer(renderer, msaaRenderTarget);
+    composer.setPixelRatio(initialPR);
+    composer.setSize(getSafeWidth(), getSafeHeight());
+
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(getSafeWidth() * initialPR, getSafeHeight() * initialPR),
+      state.bloomStrength,
+      state.bloomRadius,
+      0.78
+    );
+    composer.addPass(bloomPass);
+
+    // OrbitControls for interactive inspection
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxDistance = 26;
+    controls.minDistance = 5.5;
+    controls.target.set(0, 0, 0);
+
+    // -------------------------------------------------------------------------
+    // 3. ULTRA-CRISP 1024px TRUE 24K YELLOW-CHAMPAGNE GOLD PBR GENERATOR
+    //    Eliminates reddish tint & pixelation using smooth bicubic micro-grain
+    //    and maximum hardware anisotropic filtering
+    // -------------------------------------------------------------------------
+    function createPoliigonGold7253Textures() {
+      const size = 1024;
+      const maxAniso = renderer.capabilities.getMaxAnisotropy() || 8;
+
+      // 1. BaseColor Map: True 24K Yellow-Champagne Gold (#E5B84B / #DDA146 without red shift)
+      const baseCanvas = document.createElement('canvas');
+      baseCanvas.width = size;
+      baseCanvas.height = size;
+      const bCtx = baseCanvas.getContext('2d');
+
+      const grad = bCtx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0.0, '#E8C15A');
+      grad.addColorStop(0.5, '#DFB444');
+      grad.addColorStop(1.0, '#EACA66');
+      bCtx.fillStyle = grad;
+      bCtx.fillRect(0, 0, size, size);
+
+      const baseImg = bCtx.getImageData(0, 0, size, size);
+      const bData = baseImg.data;
+
+      // 2. Roughness Map (Smooth satin-polished ~0.18 with subtle brushed micro-sheen)
+      const roughCanvas = document.createElement('canvas');
+      roughCanvas.width = size;
+      roughCanvas.height = size;
+      const rCtx = roughCanvas.getContext('2d');
+      const roughImg = rCtx.createImageData(size, size);
+      const rData = roughImg.data;
+
+      // 3. Smooth Tangent-Space Normal Map (Fine metallic paint micro-flake, zero blocky noise)
+      const normCanvas = document.createElement('canvas');
+      normCanvas.width = size;
+      normCanvas.height = size;
+      const nCtx = normCanvas.getContext('2d');
+      const normImg = nCtx.createImageData(size, size);
+      const nData = normImg.data;
+
+      // Generate low-frequency + fine-frequency smooth heightfield (avoids harsh pixel noise)
+      const rawNoise = new Float32Array(size * size);
+      let seed = 7253;
+      const rand = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+      for (let i = 0; i < size * size; i++) {
+        rawNoise[i] = (rand() - 0.5) * 2.0;
+      }
+
+      // 3x3 box-blur pass on heightfield so flakes are silky smooth and anti-aliased
+      const heights = new Float32Array(size * size);
+      for (let y = 0; y < size; y++) {
+        const y0 = (y - 1 + size) % size;
+        const y1 = y;
+        const y2 = (y + 1) % size;
+        for (let x = 0; x < size; x++) {
+          const x0 = (x - 1 + size) % size;
+          const x1 = x;
+          const x2 = (x + 1) % size;
+          const sum =
+            rawNoise[y0 * size + x0] + rawNoise[y0 * size + x1] + rawNoise[y0 * size + x2] +
+            rawNoise[y1 * size + x0] + rawNoise[y1 * size + x1] * 2.0 + rawNoise[y1 * size + x2] +
+            rawNoise[y2 * size + x0] + rawNoise[y2 * size + x1] + rawNoise[y2 * size + x2];
+          const n = sum / 10.0;
+          heights[y * size + x] = n;
+
+          const idx = (y * size + x) * 4;
+          // True 24K Yellow-Champagne Gold RGB(230, 188, 76) — high green-to-red ratio prevents copper/red hue!
+          bData[idx] = Math.min(255, Math.max(0, Math.round(232 + n * 6)));
+          bData[idx + 1] = Math.min(255, Math.max(0, Math.round(190 + n * 5)));
+          bData[idx + 2] = Math.min(255, Math.max(0, Math.round(78 + n * 4)));
+          bData[idx + 3] = 255;
+
+          // Smooth Roughness around 46/255 (~0.18)
+          const rVal = Math.min(255, Math.max(20, Math.round(46 + n * 6)));
+          rData[idx] = rVal;
+          rData[idx + 1] = rVal;
+          rData[idx + 2] = rVal;
+          rData[idx + 3] = 255;
+        }
+      }
+
+      for (let y = 0; y < size; y++) {
+        const yNext = (y + 1) % size;
+        for (let x = 0; x < size; x++) {
+          const xNext = (x + 1) % size;
+          const dx = (heights[y * size + xNext] - heights[y * size + x]) * 0.08;
+          const dy = (heights[yNext * size + x] - heights[y * size + x]) * 0.08;
+          const idx = (y * size + x) * 4;
+          nData[idx] = Math.min(255, Math.max(0, Math.round((dx * 0.5 + 0.5) * 255)));
+          nData[idx + 1] = Math.min(255, Math.max(0, Math.round((dy * 0.5 + 0.5) * 255)));
+          nData[idx + 2] = 254;
+          nData[idx + 3] = 255;
+        }
+      }
+
+      bCtx.putImageData(baseImg, 0, 0);
+      rCtx.putImageData(roughImg, 0, 0);
+      nCtx.putImageData(normImg, 0, 0);
+
+      const wrapAndTile = (canvas, isSRGB = false) => {
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(3, 3);
+        tex.anisotropy = maxAniso;
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.generateMipmaps = true;
+        if (isSRGB) tex.colorSpace = THREE.SRGBColorSpace;
+        tex.needsUpdate = true;
+        return tex;
+      };
+
+      return {
+        baseColorMap: wrapAndTile(baseCanvas, true),
+        roughnessMap: wrapAndTile(roughCanvas, false),
+        normalMap: wrapAndTile(normCanvas, false)
+      };
+    }
+
+    const pbrMaps = createPoliigonGold7253Textures();
+
+    // Shared Primary 24K Yellow-Champagne Gold PBR Material
+    // Note: color is pure white (0xffffff) so baseColorMap (#E6BE4C) is NOT double-multiplied into orange/red!
+    const goldPBRMaterial = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(0xffffff),
+      map: pbrMaps.baseColorMap,
+      metalness: 1.0,
+      roughness: 0.18,
+      roughnessMap: pbrMaps.roughnessMap,
+      normalMap: pbrMaps.normalMap,
+      normalScale: new THREE.Vector2(state.normalScale * 0.12, state.normalScale * 0.12),
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.08,
+      ior: 1.5,
+      reflectivity: 1.0,
+      envMapIntensity: 2.5
+    });
+
+    // High-polish Mirror 24K Champagne Gold Accent Material for Bevels & Ring Diamond Nodes
+    const goldMirrorAccentMaterial = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color('#FFF0A6'),
+      metalness: 1.0,
+      roughness: 0.06,
+      clearcoat: 0.65,
+      clearcoatRoughness: 0.04,
+      envMapIntensity: 3.2
+    });
+
+    // Helper to normalize UVs on ExtrudeGeometry so PBR textures tile cleanly without stretching/pixelation
+    function normalizeExtrudeUVs(geometry, uvScale = 0.35) {
+      const pos = geometry.attributes.position;
+      const normal = geometry.attributes.normal;
+      const uv = geometry.attributes.uv;
+      if (!pos || !uv) return;
+      for (let i = 0; i < pos.count; i++) {
+        const nx = Math.abs(normal.getX(i));
+        const ny = Math.abs(normal.getY(i));
+        const nz = Math.abs(normal.getZ(i));
+        const x = pos.getX(i);
+        const y = pos.getY(i);
+        const z = pos.getZ(i);
+        if (nz >= nx && nz >= ny) {
+          uv.setXY(i, x * uvScale, y * uvScale);
+        } else if (nx >= ny) {
+          uv.setXY(i, z * uvScale, y * uvScale);
+        } else {
+          uv.setXY(i, x * uvScale, z * uvScale);
+        }
+      }
+      uv.needsUpdate = true;
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. TRUE 24K CHAMPAGNE STUDIO LIGHTING (ZERO RED/ORANGE TINT)
+    // -------------------------------------------------------------------------
+    const ambientLight = new THREE.AmbientLight(0xfffdf5, 1.05);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xfffef8, 3.8);
+    keyLight.position.set(6, 9, 10);
+    scene.add(keyLight);
+
+    const rimLightLeft = new THREE.DirectionalLight(0xffe999, 2.9);
+    rimLightLeft.position.set(-9, 4, -6);
+    scene.add(rimLightLeft);
+
+    const rimLightBottom = new THREE.DirectionalLight(0xfff3c4, 2.4);
+    rimLightBottom.position.set(0, -8, 6);
+    scene.add(rimLightBottom);
+
+    // Dynamic orbiting champagne-white specular lights
+    const glintLight1 = new THREE.PointLight(0xfff8dc, 18, 20, 1.5);
+    const glintLight2 = new THREE.PointLight(0xffe885, 15, 20, 1.5);
+    scene.add(glintLight1, glintLight2);
+
+    // -------------------------------------------------------------------------
+    // 5. REBUILD EXACT 3D "BRAVEN BUSINESS CENTER" LOGO GEOMETRY
+    // -------------------------------------------------------------------------
+    const worldRoot = new THREE.Group();
+    scene.add(worldRoot);
+
+    const logoFloatGroup = new THREE.Group();
+    const logoPoseGroup = new THREE.Group();
+    logoFloatGroup.add(logoPoseGroup);
+    worldRoot.add(logoFloatGroup);
+
+    const emblemExtrudeSettings = {
+      depth: 0.34,
+      bevelEnabled: true,
+      bevelSegments: 6,
+      steps: 1,
+      bevelSize: 0.038,
+      bevelThickness: 0.045,
+      curveSegments: 32
+    };
+
+    function buildBravenEmblemMesh() {
+      const emblemGroup = new THREE.Group();
+      const shapes = [];
+
+      // 1. Inner Left Tall Pillar
+      const innerLeft = new THREE.Shape();
+      innerLeft.moveTo(-0.44, -0.04);
+      innerLeft.lineTo(-0.075, -0.02);
+      innerLeft.lineTo(-0.075, 1.98);
+      innerLeft.lineTo(-0.44, 1.60);
+      innerLeft.closePath();
+      shapes.push(innerLeft);
+
+      // 2. Inner Right Tall Pillar
+      const innerRight = new THREE.Shape();
+      innerRight.moveTo(0.075, -0.02);
+      innerRight.lineTo(0.44, -0.04);
+      innerRight.lineTo(0.44, 1.60);
+      innerRight.lineTo(0.075, 1.98);
+      innerRight.closePath();
+      shapes.push(innerRight);
+
+      // 3. Outer Left Pillar + Long Tapering Horizontal Wing
+      const outerLeft = new THREE.Shape();
+      outerLeft.moveTo(-2.55, -0.17);
+      outerLeft.quadraticCurveTo(-1.45, -0.07, -0.58, -0.045);
+      outerLeft.lineTo(-0.58, 1.44);
+      outerLeft.lineTo(-0.94, 1.08);
+      outerLeft.lineTo(-0.94, 0.08);
+      outerLeft.lineTo(-2.55, -0.155);
+      outerLeft.closePath();
+      shapes.push(outerLeft);
+
+      // 4. Outer Right Pillar + Long Tapering Horizontal Wing
+      const outerRight = new THREE.Shape();
+      outerRight.moveTo(0.58, -0.045);
+      outerRight.quadraticCurveTo(1.45, -0.07, 2.55, -0.17);
+      outerRight.lineTo(2.55, -0.155);
+      outerRight.lineTo(0.94, 0.08);
+      outerRight.lineTo(0.94, 1.08);
+      outerRight.lineTo(0.58, 1.44);
+      outerRight.closePath();
+      shapes.push(outerRight);
+
+      shapes.forEach((sh) => {
+        const rawGeom = new THREE.ExtrudeGeometry(sh, emblemExtrudeSettings);
+        rawGeom.translate(0, 0, -emblemExtrudeSettings.depth * 0.5);
+        normalizeExtrudeUVs(rawGeom, 0.32);
+        const mesh = new THREE.Mesh(rawGeom, [goldPBRMaterial, goldMirrorAccentMaterial]);
+        emblemGroup.add(mesh);
+      });
+
+      emblemGroup.position.y = 0.25;
+      return emblemGroup;
+    }
+
+    function createGlyphShapes(char) {
+      const s = [];
+      const t = 0.19;
+
+      const rectShape = (x, y, w, h) => {
+        const sh = new THREE.Shape();
+        sh.moveTo(x, y);
+        sh.lineTo(x + w, y);
+        sh.lineTo(x + w, y + h);
+        sh.lineTo(x, y + h);
+        sh.closePath();
+        return sh;
+      };
+
+      const polyShape = (pts) => {
+        const sh = new THREE.Shape();
+        sh.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) sh.lineTo(pts[i][0], pts[i][1]);
+        sh.closePath();
+        return sh;
+      };
+
+      switch (char) {
+        case 'B': {
+          const outer = new THREE.Shape();
+          outer.moveTo(0, 0);
+          outer.lineTo(0.76, 0);
+          outer.quadraticCurveTo(0.96, 0, 0.96, 0.25);
+          outer.quadraticCurveTo(0.96, 0.46, 0.78, 0.5);
+          outer.quadraticCurveTo(0.94, 0.54, 0.94, 0.75);
+          outer.quadraticCurveTo(0.94, 1.0, 0.74, 1.0);
+          outer.lineTo(0, 1.0);
+          outer.closePath();
+
+          const holeBot = new THREE.Path();
+          holeBot.moveTo(t, t * 0.85);
+          holeBot.lineTo(0.68, t * 0.85);
+          holeBot.quadraticCurveTo(0.76, t * 0.85, 0.76, 0.28);
+          holeBot.quadraticCurveTo(0.76, 0.42, 0.68, 0.42);
+          holeBot.lineTo(t, 0.42);
+          holeBot.closePath();
+
+          const holeTop = new THREE.Path();
+          holeTop.moveTo(t, 0.57);
+          holeTop.lineTo(0.66, 0.57);
+          holeTop.quadraticCurveTo(0.74, 0.57, 0.74, 0.71);
+          holeTop.quadraticCurveTo(0.74, 0.84, 0.66, 0.84);
+          holeTop.lineTo(t, 0.84);
+          holeTop.closePath();
+
+          outer.holes.push(holeBot, holeTop);
+          s.push(outer);
+          break;
+        }
+        case 'R': {
+          const outer = new THREE.Shape();
+          outer.moveTo(0, 0);
+          outer.lineTo(t, 0);
+          outer.lineTo(t, 0.42);
+          outer.lineTo(0.54, 0.42);
+          outer.lineTo(0.76, 0);
+          outer.lineTo(0.98, 0);
+          outer.lineTo(0.73, 0.44);
+          outer.quadraticCurveTo(0.95, 0.5, 0.95, 0.72);
+          outer.quadraticCurveTo(0.95, 1.0, 0.72, 1.0);
+          outer.lineTo(0, 1.0);
+          outer.closePath();
+
+          const holeTop = new THREE.Path();
+          holeTop.moveTo(t, 0.57);
+          holeTop.lineTo(0.66, 0.57);
+          holeTop.quadraticCurveTo(0.75, 0.57, 0.75, 0.71);
+          holeTop.quadraticCurveTo(0.75, 0.84, 0.66, 0.84);
+          holeTop.lineTo(t, 0.84);
+          holeTop.closePath();
+          outer.holes.push(holeTop);
+          s.push(outer);
+          break;
+        }
+        case 'A': {
+          const outer = polyShape([
+            [0, 0],
+            [0.21, 0],
+            [0.31, 0.24],
+            [0.69, 0.24],
+            [0.79, 0],
+            [1.0, 0],
+            [0.59, 1.0],
+            [0.41, 1.0]
+          ]);
+          const hole = new THREE.Path();
+          hole.moveTo(0.37, 0.41);
+          hole.lineTo(0.63, 0.41);
+          hole.lineTo(0.5, 0.76);
+          hole.closePath();
+          outer.holes.push(hole);
+          s.push(outer);
+          break;
+        }
+        case 'V': {
+          s.push(
+            polyShape([
+              [0.0, 1.0],
+              [0.22, 1.0],
+              [0.5, 0.25],
+              [0.78, 1.0],
+              [1.0, 1.0],
+              [0.6, 0.0],
+              [0.4, 0.0]
+            ])
+          );
+          break;
+        }
+        case 'E': {
+          s.push(
+            polyShape([
+              [0, 0],
+              [0.92, 0],
+              [0.92, t * 0.9],
+              [t, t * 0.9],
+              [t, 0.42],
+              [0.78, 0.42],
+              [0.78, 0.58],
+              [t, 0.58],
+              [t, 1.0 - t * 0.9],
+              [0.92, 1.0 - t * 0.9],
+              [0.92, 1.0],
+              [0, 1.0]
+            ])
+          );
+          break;
+        }
+        case 'N': {
+          s.push(
+            polyShape([
+              [0, 0],
+              [t, 0],
+              [t, 0.68],
+              [0.76, 0],
+              [0.96, 0],
+              [0.96, 1.0],
+              [0.96 - t, 1.0],
+              [0.96 - t, 0.32],
+              [0.2, 1.0],
+              [0, 1.0]
+            ])
+          );
+          break;
+        }
+        case 'U': {
+          const sh = new THREE.Shape();
+          sh.moveTo(0, 1.0);
+          sh.lineTo(0, 0.32);
+          sh.quadraticCurveTo(0, 0, 0.48, 0);
+          sh.quadraticCurveTo(0.96, 0, 0.96, 0.32);
+          sh.lineTo(0.96, 1.0);
+          sh.lineTo(0.96 - t, 1.0);
+          sh.lineTo(0.96 - t, 0.34);
+          sh.quadraticCurveTo(0.96 - t, t, 0.48, t);
+          sh.quadraticCurveTo(t, t, t, 0.34);
+          sh.lineTo(t, 1.0);
+          sh.closePath();
+          s.push(sh);
+          break;
+        }
+        case 'S': {
+          s.push(
+            polyShape([
+              [0.04, 0.0],
+              [0.88, 0.0],
+              [0.96, 0.12],
+              [0.96, 0.46],
+              [0.84, 0.57],
+              [0.22, 0.57],
+              [0.22, 0.82],
+              [0.92, 0.82],
+              [0.92, 1.0],
+              [0.12, 1.0],
+              [0.02, 0.88],
+              [0.02, 0.52],
+              [0.14, 0.41],
+              [0.76, 0.41],
+              [0.76, 0.18],
+              [0.04, 0.18]
+            ])
+          );
+          break;
+        }
+        case 'I': {
+          s.push(rectShape(0.36, 0, 0.24, 1.0));
+          break;
+        }
+        case 'C': {
+          s.push(
+            polyShape([
+              [0.92, 0.0],
+              [0.92, 0.19],
+              [0.24, 0.19],
+              [0.2, 0.25],
+              [0.2, 0.75],
+              [0.24, 0.81],
+              [0.92, 0.81],
+              [0.92, 1.0],
+              [0.16, 1.0],
+              [0.0, 0.84],
+              [0.0, 0.16],
+              [0.16, 0.0]
+            ])
+          );
+          break;
+        }
+        case 'T': {
+          s.push(
+            polyShape([
+              [0.0, 1.0],
+              [0.96, 1.0],
+              [0.96, 1.0 - t],
+              [0.48 + t * 0.5, 1.0 - t],
+              [0.48 + t * 0.5, 0],
+              [0.48 - t * 0.5, 0],
+              [0.48 - t * 0.5, 1.0 - t],
+              [0.0, 1.0 - t]
+            ])
+          );
+          break;
+        }
+        default:
+          break;
+      }
+      return s;
+    }
+
+    function build3DWordMesh(text, letterWidth, letterHeight, tracking, depth, bevel) {
+      const group = new THREE.Group();
+      const chars = text.split('');
+      let cursorX = 0;
+
+      const extrudeOpts = {
+        depth,
+        bevelEnabled: true,
+        bevelSegments: 5,
+        steps: 1,
+        bevelSize: bevel,
+        bevelThickness: bevel,
+        curveSegments: 24
+      };
+
+      chars.forEach((ch) => {
+        if (ch === ' ') {
+          cursorX += letterWidth * 0.65 + tracking;
+          return;
+        }
+        const rawShapes = createGlyphShapes(ch);
+        rawShapes.forEach((sh) => {
+          const geom = new THREE.ExtrudeGeometry(sh, extrudeOpts);
+          geom.scale(letterWidth, letterHeight, 1);
+          geom.translate(cursorX, 0, -depth * 0.5);
+          normalizeExtrudeUVs(geom, 0.35);
+          const mesh = new THREE.Mesh(geom, [goldPBRMaterial, goldMirrorAccentMaterial]);
+          group.add(mesh);
+        });
+        const charAdvance = ch === 'I' ? letterWidth * 0.65 : letterWidth;
+        cursorX += charAdvance + tracking;
+      });
+
+      const totalWidth = cursorX - tracking;
+      group.position.x = -totalWidth * 0.5;
+      return group;
+    }
+
+    // Assemble Complete 3D Braven Business Center Logo
+    const emblemMeshGroup = buildBravenEmblemMesh();
+    logoPoseGroup.add(emblemMeshGroup);
+
+    const bravenTitleGroup = build3DWordMesh('BRAVEN', 0.54, 0.56, 0.24, 0.28, 0.026);
+    bravenTitleGroup.position.y = -0.68;
+    logoPoseGroup.add(bravenTitleGroup);
+
+    const subtitleGroup = build3DWordMesh('BUSINESS CENTER', 0.19, 0.22, 0.11, 0.18, 0.014);
+    subtitleGroup.position.y = -1.18;
+    logoPoseGroup.add(subtitleGroup);
+
+    logoPoseGroup.position.y = 0.08;
+
+    // -------------------------------------------------------------------------
+    // 6. ALL 3 PERPENDICULAR (90° ORTHOGONAL) GOLDEN RINGS VISIBLY TUMBLING
+    //    Each ring has an orthogonal 90° Reference Mount + a Tumbler Group that
+    //    rotates around its diameter axes (X & Y) so ALL 3 rings visibly sweep!
+    // -------------------------------------------------------------------------
+    const ringsRootGroup = new THREE.Group();
+    worldRoot.add(ringsRootGroup);
+
+    const ringMounts = [new THREE.Group(), new THREE.Group(), new THREE.Group()];
+    const ringTumblers = [new THREE.Group(), new THREE.Group(), new THREE.Group()];
+
+    // Strictly 90° mutually perpendicular reference planes:
+    // Mount 0: XY reference plane (0, 0, 0)
+    ringMounts[0].rotation.set(0, 0, 0);
+    // Mount 1: XZ reference plane (90° perpendicular around X)
+    ringMounts[1].rotation.set(Math.PI / 2, 0, 0);
+    // Mount 2: YZ reference plane (90° perpendicular around Y)
+    ringMounts[2].rotation.set(0, Math.PI / 2, 0);
+
+    for (let i = 0; i < 3; i++) {
+      ringMounts[i].add(ringTumblers[i]);
+      ringsRootGroup.add(ringMounts[i]);
+    }
+
+    function rebuildSingleRing(index, radius) {
+      const tumbler = ringTumblers[index];
+      while (tumbler.children.length > 0) {
+        const child = tumbler.children[0];
+        if (child.geometry) child.geometry.dispose();
+        tumbler.remove(child);
+      }
+
+      // Main Beveled 24K Metallic Gold Torus Ring
+      const tubeRadius = 0.054 + index * 0.006;
+      const mainTorusGeom = new THREE.TorusGeometry(radius, tubeRadius, 36, 180);
+      const mainTorusMesh = new THREE.Mesh(mainTorusGeom, goldPBRMaterial);
+      tumbler.add(mainTorusMesh);
+
+      // Inner Machined Thin Gold Accent Ring
+      const innerTorusGeom = new THREE.TorusGeometry(radius - 0.11, 0.016, 20, 140);
+      const innerTorusMesh = new THREE.Mesh(innerTorusGeom, goldMirrorAccentMaterial);
+      tumbler.add(innerTorusMesh);
+
+      // 4 Cardinal Octahedral/Diamond Gold Nodes on each Ring
+      const nodeGeom = new THREE.OctahedronGeometry(tubeRadius * 2.2, 0);
+      for (let i = 0; i < 4; i++) {
+        const angle = (i * Math.PI) / 2;
+        const nodeMesh = new THREE.Mesh(nodeGeom, goldMirrorAccentMaterial);
+        nodeMesh.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+        nodeMesh.rotation.z = angle;
+        tumbler.add(nodeMesh);
+      }
+    }
+
+    function rebuildAllRings() {
+      rebuildSingleRing(0, state.ringRadii[0]);
+      rebuildSingleRing(1, state.ringRadii[1]);
+      rebuildSingleRing(2, state.ringRadii[2]);
+    }
+    rebuildAllRings();
+
+    // Subtle Golden Shimmer Particles around the Showroom
+    const particleCount = 90;
+    const particleGeom = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+      const r = 3.2 + Math.random() * 4.5;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      particlePositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      particlePositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      particlePositions[i * 3 + 2] = r * Math.cos(phi);
+    }
+    particleGeom.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    const particleMat = new THREE.PointsMaterial({
+      color: 0xfff0a8,
+      size: 0.055,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending
+    });
+    const goldParticles = new THREE.Points(particleGeom, particleMat);
+    worldRoot.add(goldParticles);
+
+    // -------------------------------------------------------------------------
+    // 7. SYMMETRICAL 2x2 CAR RACING SMART SIGNAGE SLIDESHOW CONTROLLER
+    // -------------------------------------------------------------------------
+    const domTopSector = document.getElementById('signage-top-sector');
+    const domMetricText = document.getElementById('signage-metric-text');
+    const domSpeedSlashBar = document.getElementById('speed-slash-bar');
+    const domSlideCounter = document.getElementById('slide-counter-readout');
+    const domProgressBar = document.getElementById('autoplay-progress-bar');
+    const domSlideDotsRow = document.getElementById('slide-dots-row');
+
+    const domSymCards = [
+      document.getElementById('sym-card-0'),
+      document.getElementById('sym-card-1'),
+      document.getElementById('sym-card-2'),
+      document.getElementById('sym-card-3')
+    ];
+    const domCardBadges = [
+      document.getElementById('card-badge-0'),
+      document.getElementById('card-badge-1'),
+      document.getElementById('card-badge-2'),
+      document.getElementById('card-badge-3')
+    ];
+    const domCardTitles = [
+      document.getElementById('card-title-0'),
+      document.getElementById('card-title-1'),
+      document.getElementById('card-title-2'),
+      document.getElementById('card-title-3')
+    ];
+    const domCardSubs = [
+      document.getElementById('card-sub-0'),
+      document.getElementById('card-sub-1'),
+      document.getElementById('card-sub-2'),
+      document.getElementById('card-sub-3')
+    ];
+
+    // Build 6 Sector Dots
+    SIGNAGE_SLIDES.forEach((_, idx) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = `h-1.5 transition-all duration-300 cursor-pointer ${
+        idx === 0 ? 'w-7 bg-yellow-300 shadow-[0_0_8px_#fde047]' : 'w-3 bg-amber-500/35 hover:bg-yellow-400/70'
+      }`;
+      dot.addEventListener('click', () => goToSlide(idx));
+      domSlideDotsRow.appendChild(dot);
+    });
+
+    function updateSectorDots(activeIndex) {
+      Array.from(domSlideDotsRow.children).forEach((dot, idx) => {
+        dot.className = `h-1.5 transition-all duration-300 cursor-pointer ${
+          idx === activeIndex
+            ? 'w-7 bg-yellow-300 shadow-[0_0_8px_#fde047]'
+            : 'w-3 bg-amber-500/35 hover:bg-yellow-400/70'
+        }`;
+      });
+    }
+
+    function scrambleText(element, finalString, durationMs = 260) {
+      const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ//⚡';
+      const start = performance.now();
+      const step = (now) => {
+        const progress = Math.min((now - start) / durationMs, 1);
+        if (progress < 1) {
+          let out = '';
+          for (let i = 0; i < finalString.length; i++) {
+            if (finalString[i] === ' ' || i < finalString.length * progress) {
+              out += finalString[i];
+            } else {
+              out += chars[Math.floor(Math.random() * chars.length)];
+            }
+          }
+          element.textContent = out;
+          requestAnimationFrame(step);
+        } else {
+          element.textContent = finalString;
+        }
+      };
+      requestAnimationFrame(step);
+    }
+
+    let slideTimerElapsed = 0;
+    let isTransitioning = false;
+
+    function goToSlide(targetIdx) {
+      if (isTransitioning) return;
+      isTransitioning = true;
+      slideTimerElapsed = 0;
+
+      const normalizedIdx = (targetIdx + SIGNAGE_SLIDES.length) % SIGNAGE_SLIDES.length;
+      state.currentSlide = normalizedIdx;
+      const slide = SIGNAGE_SLIDES[normalizedIdx];
+
+      // Trigger Nitrous Rotational Surge on the 3 Perpendicular Golden Rings
+      state.nitroSpinBoost = 3.6;
+
+      // Update 3D Choreography Target Pose
+      state.choreoPose = { ...slide.choreo };
+
+      // Trigger Diagonal Gold Speed-Slash Flash
+      domSpeedSlashBar.classList.remove('speed-slash-active');
+      void domSpeedSlashBar.offsetWidth;
+      domSpeedSlashBar.classList.add('speed-slash-active');
+
+      // Whip-Out Left 2 Cards & Right 2 Cards Symmetrically
+      domSymCards.forEach((card, idx) => {
+        const isLeft = idx < 2;
+        card.classList.remove(isLeft ? 'cascade-in-left' : 'cascade-in-right');
+        card.classList.add(isLeft ? 'cascade-out-left' : 'cascade-out-right');
+      });
+
+      setTimeout(() => {
+        scrambleText(domTopSector, slide.sector, 250);
+        scrambleText(domMetricText, slide.metric, 280);
+
+        slide.cards.forEach((cData, idx) => {
+          domCardBadges[idx].textContent = cData.badge;
+          domCardTitles[idx].textContent = cData.title;
+          domCardSubs[idx].textContent = cData.sub;
+        });
+
+        domSlideCounter.textContent = `0${normalizedIdx + 1} / 0${SIGNAGE_SLIDES.length}`;
+        updateSectorDots(normalizedIdx);
+
+        // Cascade Slam-In Left 2 Cards & Right 2 Cards with Staggered Racing Delays
+        const delays = ['0.03s', '0.11s', '0.07s', '0.15s'];
+        domSymCards.forEach((card, idx) => {
+          const isLeft = idx < 2;
+          card.classList.remove(isLeft ? 'cascade-out-left' : 'cascade-out-right');
+          card.style.animationDelay = delays[idx];
+          void card.offsetWidth;
+          card.classList.add(isLeft ? 'cascade-in-left' : 'cascade-in-right');
+        });
+
+        isTransitioning = false;
+      }, 190);
+    }
+
+    // Prev / Next Navigation Buttons
+    document.getElementById('btn-prev-slide').addEventListener('click', () => {
+      goToSlide(state.currentSlide - 1);
+    });
+    document.getElementById('btn-next-slide').addEventListener('click', () => {
+      goToSlide(state.currentSlide + 1);
+    });
+
+    // Clicking any of the 4 symmetrical cards or metric pill advances slide
+    domSymCards.forEach((card) => {
+      card.addEventListener('click', () => goToSlide(state.currentSlide + 1));
+    });
+    document.getElementById('signage-metric-pill').addEventListener('click', () => goToSlide(state.currentSlide + 1));
+
+    // Autoplay Toggle
+    const btnToggleAutoplay = document.getElementById('btn-toggle-autoplay');
+    const autoplayDot = document.getElementById('autoplay-dot');
+    const autoplayLabel = document.getElementById('autoplay-label');
+    btnToggleAutoplay.addEventListener('click', () => {
+      state.autoplay = !state.autoplay;
+      autoplayLabel.textContent = state.autoplay ? 'AUTOPLAY: ON' : 'AUTOPLAY: PAUSED';
+      autoplayDot.className = state.autoplay
+        ? 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]'
+        : 'w-2 h-2 rounded-full bg-amber-400';
+    });
+
+    // Interactive 3D Pointer Hover Tilt on Symmetrical Cards (Scaled by UI Animation Amplification)
+    domSymCards.forEach((card, idx) => {
+      const isLeft = idx < 2;
+      card.addEventListener('pointermove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;
+        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        const amp = state.uiAmp;
+        const baseSkew = -7 * amp;
+        const shiftX = (isLeft ? 10 : -10) * amp;
+        const rotY = nx * 14 * amp;
+        const rotX = -ny * 12 * amp;
+        const scale = 1 + 0.03 * amp;
+        card.style.transform = `perspective(900px) skewX(${baseSkew}deg) translateX(${shiftX}px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.transform = '';
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // 8. DUAL-ENGINE LOOPING AUDIO PLAYER (YouTube ffCAdXPO0K0 + 106 BPM WebAudio Afrobeat Synth)
+    // -------------------------------------------------------------------------
+    const YT_VIDEO_ID = 'ffCAdXPO0K0';
+    let ytPlayer = null;
+    let ytReady = false;
+    let ytIsPlaying = false;
+    let musicLoopEnabled = true;
+    let musicPlayingWanted = true;
+    let audioEngineMode = 'hybrid'; // 'hybrid' | 'synth' | 'youtube'
+    let masterVolume = 0.75;
+
+    const btnMusicPlay = document.getElementById('btn-music-play');
+    const btnMusicStop = document.getElementById('btn-music-stop');
+    const btnMusicLoop = document.getElementById('btn-music-loop');
+    const sliderMusicVol = document.getElementById('slider-music-vol');
+    const valMusicVol = document.getElementById('val-music-vol');
+    const selectAudioEngine = document.getElementById('select-audio-engine');
+    const musicStatusBadge = document.getElementById('music-status-badge');
+    const eqBars = document.querySelectorAll('#music-eq-bars .eq-bar');
+
+    // WebAudio 106 BPM Afrobeat Billionaire Groove Synthesizer (Zero external block)
+    let audioCtx = null;
+    let masterGain = null;
+    let synthStepTimer = null;
+    let synthStep = 0;
+
+    function initWebAudioSynth() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = masterVolume * 0.45;
+        masterGain.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playLogDrum(freq, time, dur = 0.24) {
+      if (!audioCtx || !masterGain) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq * 1.6, time);
+      osc.frequency.exponentialRampToValueAtTime(freq, time + 0.045);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.65, time + dur);
+
+      gain.gain.setValueAtTime(0.001, time);
+      gain.gain.linearRampToValueAtTime(0.75, time + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + dur + 0.02);
+    }
+
+    function playShaker(time, accent = false) {
+      if (!audioCtx || !masterGain) return;
+      const bufferSize = audioCtx.sampleRate * 0.045;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 6800;
+      filter.Q.value = 2.2;
+
+      const gain = audioCtx.createGain();
+      gain.gain.value = accent ? 0.22 : 0.10;
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      noise.start(time);
+    }
+
+    function playWarmChord(freqs, time, dur = 0.55) {
+      if (!audioCtx || !masterGain) return;
+      freqs.forEach((f) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(f, time);
+
+        gain.gain.setValueAtTime(0.001, time);
+        gain.gain.linearRampToValueAtTime(0.11, time + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(time);
+        osc.stop(time + dur + 0.02);
+      });
+    }
+
+    function startSynthLoop() {
+      initWebAudioSynth();
+      if (synthStepTimer) return;
+      const stepMs = (60 / 106 / 4) * 1000; // 16th-note at 106 BPM (~141.5ms)
+      const bassNotes = [110, 110, 130.81, 146.83, 164.81, 146.83, 130.81, 98.0];
+      const chords = [
+        [220.0, 261.63, 329.63, 392.0], // Am7
+        [174.61, 220.0, 261.63, 349.23], // Fmaj7
+        [196.0, 246.94, 293.66, 392.0], // G6
+        [164.81, 196.0, 246.94, 329.63]  // Em7
+      ];
+
+      synthStepTimer = setInterval(() => {
+        if (!musicPlayingWanted) return;
+        // In hybrid mode, if YouTube stream is actively playing audio, mute synth so they don't double up
+        if (audioEngineMode === 'youtube' || (audioEngineMode === 'hybrid' && ytIsPlaying)) {
+          return;
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        const s = synthStep % 16;
+
+        // Afrobeat Shaker on every 16th with syncopated accents
+        playShaker(now, s % 4 === 0 || s === 3 || s === 11);
+
+        // Syncopated Afrobeat Log-Drum Bassline
+        if (s === 0 || s === 3 || s === 6 || s === 10 || s === 12 || s === 14) {
+          const note = bassNotes[(synthStep >> 1) % bassNotes.length];
+          playLogDrum(note, now, s === 0 || s === 10 ? 0.28 : 0.18);
+        }
+
+        // Warm Luxury Rhodes Chords on beat 1 and off-beat 7
+        if (s === 0 || s === 6) {
+          const chord = chords[Math.floor(synthStep / 16) % chords.length];
+          playWarmChord(chord, now, 0.48);
+        }
+
+        synthStep++;
+        if (!musicLoopEnabled && synthStep >= 256) {
+          stopAllMusic();
+        }
+      }, stepMs);
+    }
+
+    function stopSynthLoop() {
+      if (synthStepTimer) {
+        clearInterval(synthStepTimer);
+        synthStepTimer = null;
+      }
+    }
+
+    function updateMusicUI(isPlaying, statusText) {
+      musicStatusBadge.textContent = statusText;
+      if (isPlaying) {
+        musicStatusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
+        eqBars.forEach((b) => b.classList.add('eq-bar-active'));
+      } else {
+        musicStatusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40';
+        eqBars.forEach((b) => b.classList.remove('eq-bar-active'));
+      }
+    }
+
+    function startAllMusic() {
+      musicPlayingWanted = true;
+      if (audioEngineMode !== 'youtube') {
+        startSynthLoop();
+      }
+      if (ytReady && ytPlayer && audioEngineMode !== 'synth') {
+        try {
+          ytPlayer.unMute();
+          ytPlayer.setVolume(Math.round(masterVolume * 100));
+          ytPlayer.playVideo();
+        } catch (_) {}
+      }
+      updateMusicUI(true, musicLoopEnabled ? 'PLAYING • LOOP' : 'PLAYING');
+    }
+
+    function stopAllMusic() {
+      musicPlayingWanted = false;
+      ytIsPlaying = false;
+      stopSynthLoop();
+      if (ytReady && ytPlayer) {
+        try {
+          ytPlayer.pauseVideo();
+          ytPlayer.seekTo(0);
+        } catch (_) {}
+      }
+      updateMusicUI(false, 'STOPPED');
+    }
+
+    // Load YouTube IFrame API asynchronously into the visible mini-deck
+    window.onYouTubeIframeAPIReady = function () {
+      ytPlayer = new window.YT.Player('yt-audio-player', {
+        width: '112',
+        height: '32',
+        videoId: YT_VIDEO_ID,
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          loop: 1,
+          playlist: YT_VIDEO_ID,
+          rel: 0,
+          playsinline: 1,
+          modestbranding: 1,
+          origin: window.location.origin
+        },
+        events: {
+          onReady: (event) => {
+            ytReady = true;
+            event.target.setVolume(Math.round(masterVolume * 100));
+            if (musicPlayingWanted && audioEngineMode !== 'synth') {
+              event.target.playVideo();
+            }
+          },
+          onStateChange: (event) => {
+            if (event.data === 1) {
+              ytIsPlaying = true;
+              updateMusicUI(true, musicLoopEnabled ? 'YT PLAYING • LOOP' : 'YT PLAYING');
+            } else if (event.data === 0) {
+              ytIsPlaying = false;
+              if (musicLoopEnabled && musicPlayingWanted && audioEngineMode !== 'synth') {
+                event.target.seekTo(0);
+                event.target.playVideo();
+              }
+            } else {
+              ytIsPlaying = false;
+            }
+          },
+          onError: () => {
+            ytIsPlaying = false;
+            if (musicPlayingWanted && audioEngineMode !== 'youtube') {
+              startSynthLoop();
+              updateMusicUI(true, 'SYNTH GROOVE • LOOP');
+            }
+          }
+        }
+      });
+    };
+
+    const ytScript = document.createElement('script');
+    ytScript.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(ytScript);
+
+    // Unlock WebAudio & YouTube on first user interaction anywhere in the showroom
+    const unlockAudioOnFirstGesture = () => {
+      if (musicPlayingWanted) {
+        startAllMusic();
+      }
+    };
+    window.addEventListener('pointerdown', unlockAudioOnFirstGesture, { passive: true });
+    window.addEventListener('keydown', unlockAudioOnFirstGesture, { passive: true });
+
+    btnMusicPlay.addEventListener('click', () => startAllMusic());
+    btnMusicStop.addEventListener('click', () => stopAllMusic());
+
+    btnMusicLoop.addEventListener('click', () => {
+      musicLoopEnabled = !musicLoopEnabled;
+      btnMusicLoop.textContent = musicLoopEnabled ? '🔁 Loop: ON' : '🔁 Loop: OFF';
+      btnMusicLoop.className = musicLoopEnabled
+        ? 'px-2.5 py-1.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 border border-yellow-400/50 font-racing-title font-bold text-[11px] uppercase tracking-wider transition cursor-pointer'
+        : 'px-2.5 py-1.5 rounded bg-zinc-900 text-amber-200/70 border border-amber-500/30 font-racing-title font-bold text-[11px] uppercase tracking-wider transition cursor-pointer';
+      if (musicPlayingWanted) {
+        updateMusicUI(true, musicLoopEnabled ? 'PLAYING • LOOP' : 'PLAYING');
+      }
+    });
+
+    sliderMusicVol.addEventListener('input', (e) => {
+      const vol = parseInt(e.target.value, 10);
+      masterVolume = vol / 100;
+      valMusicVol.textContent = `${vol}%`;
+      if (masterGain && audioCtx) {
+        masterGain.gain.setValueAtTime(masterVolume * 0.45, audioCtx.currentTime);
+      }
+      if (ytReady && ytPlayer) {
+        try {
+          ytPlayer.setVolume(vol);
+          if (vol > 0) ytPlayer.unMute();
+        } catch (_) {}
+      }
+    });
+
+    selectAudioEngine.addEventListener('change', (e) => {
+      audioEngineMode = e.target.value;
+      if (musicPlayingWanted) {
+        if (audioEngineMode === 'synth') {
+          if (ytReady && ytPlayer) {
+            try { ytPlayer.pauseVideo(); } catch (_) {}
+          }
+          ytIsPlaying = false;
+          startSynthLoop();
+        } else {
+          startAllMusic();
+        }
+      }
+    });
+
+    // -------------------------------------------------------------------------
+    // 9. WEBGL STUDIO BACKDROPS & 3D ARCHITECTURAL GOLD GRID
+    // -------------------------------------------------------------------------
+    function createBackdropTextures() {
+      // 1. OBSIDIAN LUXURY STUDIO BACKDROP
+      const obsCanvas = document.createElement('canvas');
+      obsCanvas.width = 1024;
+      obsCanvas.height = 1024;
+      const oCtx = obsCanvas.getContext('2d');
+      const oGrad = oCtx.createRadialGradient(512, 460, 40, 512, 512, 720);
+      oGrad.addColorStop(0.0, '#221a0f');
+      oGrad.addColorStop(0.48, '#0d0a06');
+      oGrad.addColorStop(1.0, '#040302');
+      oCtx.fillStyle = oGrad;
+      oCtx.fillRect(0, 0, 1024, 1024);
+      const obsidianTex = new THREE.CanvasTexture(obsCanvas);
+      obsidianTex.colorSpace = THREE.SRGBColorSpace;
+
+      // 2. CARRARA WHITE MARBLE STUDIO BACKDROP
+      const marCanvas = document.createElement('canvas');
+      marCanvas.width = 1024;
+      marCanvas.height = 1024;
+      const mCtx = marCanvas.getContext('2d');
+      const mGrad = mCtx.createRadialGradient(512, 480, 60, 512, 512, 740);
+      mGrad.addColorStop(0.0, '#fbf9f5');
+      mGrad.addColorStop(0.65, '#f0ece1');
+      mGrad.addColorStop(1.0, '#dfd8c8');
+      mCtx.fillStyle = mGrad;
+      mCtx.fillRect(0, 0, 1024, 1024);
+
+      for (let v = 0; v < 18; v++) {
+        mCtx.beginPath();
+        let vx = (v * 97) % 1024;
+        let vy = 0;
+        mCtx.moveTo(vx, vy);
+        while (vy < 1024) {
+          vy += 24 + (v % 5) * 6;
+          vx += Math.sin(vy * 0.012 + v) * 26 + Math.cos(vy * 0.03 - v) * 12;
+          mCtx.lineTo(vx, vy);
+        }
+        mCtx.strokeStyle = v % 4 === 0 ? 'rgba(212, 168, 68, 0.16)' : 'rgba(140, 134, 124, 0.12)';
+        mCtx.lineWidth = v % 3 === 0 ? 3.2 : 1.4;
+        mCtx.stroke();
+      }
+      const marbleTex = new THREE.CanvasTexture(marCanvas);
+      marbleTex.colorSpace = THREE.SRGBColorSpace;
+
+      // 3. GOLDEN CYBER-GRID STUDIO BACKDROP
+      const gridCanvas = document.createElement('canvas');
+      gridCanvas.width = 1024;
+      gridCanvas.height = 1024;
+      const gCtx = gridCanvas.getContext('2d');
+      const gGrad = gCtx.createRadialGradient(512, 512, 50, 512, 512, 720);
+      gGrad.addColorStop(0.0, '#1e1608');
+      gGrad.addColorStop(0.6, '#0b0803');
+      gGrad.addColorStop(1.0, '#040301');
+      gCtx.fillStyle = gGrad;
+      gCtx.fillRect(0, 0, 1024, 1024);
+
+      gCtx.strokeStyle = 'rgba(235, 188, 70, 0.14)';
+      gCtx.lineWidth = 1;
+      const step = 32;
+      for (let i = 0; i <= 1024; i += step) {
+        gCtx.beginPath();
+        gCtx.moveTo(i, 0);
+        gCtx.lineTo(i, 1024);
+        gCtx.stroke();
+        gCtx.beginPath();
+        gCtx.moveTo(0, i);
+        gCtx.lineTo(1024, i);
+        gCtx.stroke();
+      }
+      gCtx.strokeStyle = 'rgba(255, 215, 95, 0.30)';
+      gCtx.lineWidth = 2;
+      for (let i = 0; i <= 1024; i += step * 4) {
+        gCtx.beginPath();
+        gCtx.moveTo(i, 0);
+        gCtx.lineTo(i, 1024);
+        gCtx.stroke();
+        gCtx.beginPath();
+        gCtx.moveTo(0, i);
+        gCtx.lineTo(1024, i);
+        gCtx.stroke();
+      }
+      const goldGridTex = new THREE.CanvasTexture(gridCanvas);
+      goldGridTex.colorSpace = THREE.SRGBColorSpace;
+
+      return { obsidian: obsidianTex, marble: marbleTex, grid: goldGridTex };
+    }
+
+    const backdropTextures = createBackdropTextures();
+
+    // 3D Architectural Golden Grid Planes (Visible when 'Gold Grid' backdrop is active)
+    const studioGrid3DGroup = new THREE.Group();
+    const floorGrid = new THREE.GridHelper(42, 42, 0xffd768, 0x7c5812);
+    floorGrid.position.y = -4.8;
+    floorGrid.material.transparent = true;
+    floorGrid.material.opacity = 0.55;
+    studioGrid3DGroup.add(floorGrid);
+
+    const backWallGrid = new THREE.GridHelper(42, 42, 0xffd768, 0x5c400c);
+    backWallGrid.rotation.x = Math.PI / 2;
+    backWallGrid.position.z = -9.5;
+    backWallGrid.material.transparent = true;
+    backWallGrid.material.opacity = 0.32;
+    studioGrid3DGroup.add(backWallGrid);
+
+    studioGrid3DGroup.visible = false;
+    scene.add(studioGrid3DGroup);
+
+    function applyBackdropMode(mode) {
+      state.backdropMode = mode;
+      document.body.classList.remove('bg-luxury', 'bg-white-studio', 'bg-grid', 'bg-transparent-grid');
+      const labelEl = document.getElementById('val-backdrop-mode');
+
+      if (mode === 'obsidian') {
+        document.body.classList.add('bg-luxury');
+        scene.background = backdropTextures.obsidian;
+        studioGrid3DGroup.visible = false;
+        bloomPass.threshold = 0.78;
+        bloomPass.strength = state.bloomStrength;
+        renderer.toneMappingExposure = 1.18;
+        if (labelEl) labelEl.textContent = 'Obsidian';
+      } else if (mode === 'marble') {
+        document.body.classList.add('bg-white-studio');
+        scene.background = backdropTextures.marble;
+        studioGrid3DGroup.visible = false;
+        bloomPass.threshold = 0.96;
+        bloomPass.strength = Math.min(state.bloomStrength, 0.38);
+        renderer.toneMappingExposure = 1.02;
+        if (labelEl) labelEl.textContent = 'White Marble';
+      } else if (mode === 'grid') {
+        document.body.classList.add('bg-grid');
+        scene.background = backdropTextures.grid;
+        studioGrid3DGroup.visible = true;
+        bloomPass.threshold = 0.74;
+        bloomPass.strength = state.bloomStrength;
+        renderer.toneMappingExposure = 1.18;
+        if (labelEl) labelEl.textContent = 'Gold Grid';
+      } else if (mode === 'alpha') {
+        document.body.classList.add('bg-transparent-grid');
+        scene.background = null;
+        studioGrid3DGroup.visible = false;
+        renderer.setClearColor(0x000000, 0);
+        renderer.toneMappingExposure = 1.18;
+        if (labelEl) labelEl.textContent = 'Alpha (Transparent)';
+      }
+
+      document.querySelectorAll('.bg-theme-btn').forEach((btn) => {
+        const isActive = btn.getAttribute('data-bg') === mode;
+        btn.className = isActive
+          ? 'bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-amber-500/35 border border-yellow-400 text-yellow-100 cursor-pointer'
+          : 'bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-zinc-800/90 border border-zinc-700 text-amber-100 hover:border-yellow-400/50 cursor-pointer';
+      });
+    }
+
+    document.querySelectorAll('.bg-theme-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        applyBackdropMode(btn.getAttribute('data-bg'));
+      });
+    });
+
+    applyBackdropMode('obsidian');
+
+    // -------------------------------------------------------------------------
+    // 10. STUDIO SLIDERS, SLIDESHOW SPEED, UI AMP, COLLAPSIBLE UI & VIEW MODES
+    // -------------------------------------------------------------------------
+    const studioDrawer = document.getElementById('studio-sliders-drawer');
+    const signageHud = document.getElementById('smart-signage-hud');
+    const btnToggleStudio = document.getElementById('btn-toggle-studio');
+    const btnToggleSignage = document.getElementById('btn-toggle-signage');
+    const btnRestoreUI = document.getElementById('btn-restore-ui');
+
+    let studioDrawerOpen = true;
+    let signageVisible = true;
+
+    function setStudioDrawerOpen(open) {
+      studioDrawerOpen = open;
+      if (open) {
+        studioDrawer.classList.remove('translate-x-[420px]', 'opacity-0', 'pointer-events-none');
+        studioDrawer.classList.add('translate-x-0', 'opacity-100', 'pointer-events-auto');
+      } else {
+        studioDrawer.classList.add('translate-x-[420px]', 'opacity-0', 'pointer-events-none');
+        studioDrawer.classList.remove('translate-x-0', 'opacity-100', 'pointer-events-auto');
+      }
+    }
+
+    btnToggleStudio.addEventListener('click', () => setStudioDrawerOpen(!studioDrawerOpen));
+    document.getElementById('btn-close-studio').addEventListener('click', () => setStudioDrawerOpen(false));
+
+    btnToggleSignage.addEventListener('click', () => {
+      signageVisible = !signageVisible;
+      signageHud.style.opacity = signageVisible ? '1' : '0';
+      Array.from(signageHud.querySelectorAll('.pointer-events-auto')).forEach((el) => {
+        el.style.pointerEvents = signageVisible ? 'auto' : 'none';
+      });
+      btnToggleSignage.textContent = signageVisible ? 'Signage HUD: ON' : 'Signage HUD: OFF';
+      btnToggleSignage.className = signageVisible
+        ? 'px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-amber-400 text-black font-bold hover:bg-amber-300 transition cursor-pointer'
+        : 'px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-zinc-900 text-amber-200 border border-amber-500/40 transition cursor-pointer';
+    });
+
+    document.getElementById('btn-kiosk-mode').addEventListener('click', () => {
+      document.body.classList.remove('zen-mode');
+      document.body.classList.add('kiosk-mode');
+      setStudioDrawerOpen(false);
+      btnRestoreUI.classList.remove('hidden');
+      btnRestoreUI.classList.add('flex');
+    });
+
+    function toggleZenMode(forceState) {
+      const isZen = typeof forceState === 'boolean' ? forceState : !document.body.classList.contains('zen-mode');
+      document.body.classList.remove('kiosk-mode');
+      document.body.classList.toggle('zen-mode', isZen);
+      if (isZen) {
+        setStudioDrawerOpen(false);
+        btnRestoreUI.classList.remove('hidden');
+        btnRestoreUI.classList.add('flex');
+      } else {
+        btnRestoreUI.classList.add('hidden');
+        btnRestoreUI.classList.remove('flex');
+      }
+    }
+
+    document.getElementById('btn-zen-mode').addEventListener('click', () => toggleZenMode(true));
+    btnRestoreUI.addEventListener('click', () => {
+      document.body.classList.remove('zen-mode', 'kiosk-mode');
+      btnRestoreUI.classList.add('hidden');
+      btnRestoreUI.classList.remove('flex');
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'h' || e.key === 'H') toggleZenMode();
+      if (e.key === 'ArrowRight') goToSlide(state.currentSlide + 1);
+      if (e.key === 'ArrowLeft') goToSlide(state.currentSlide - 1);
+    });
+
+    const bindSlider = (id, valId, prop, formatter, onChange) => {
+      const slider = document.getElementById(id);
+      const label = document.getElementById(valId);
+      if (!slider || !label) return;
+      slider.addEventListener('input', (e) => {
+        const v = parseFloat(e.target.value);
+        state[prop] = v;
+        label.textContent = formatter(v);
+        if (onChange) onChange(v);
+      });
+    };
+
+    // Slideshow Speed & UI Animation Amplification Sliders
+    bindSlider('slider-slide-speed', 'val-slide-speed', 'slideDuration', (v) => `${v.toFixed(1)}s`, () => {
+      slideTimerElapsed = 0;
+    });
+    bindSlider('slider-ui-amp', 'val-ui-amp', 'uiAmp', (v) => `${v.toFixed(2)}x`, (v) => {
+      document.documentElement.style.setProperty('--ui-amp', v.toString());
+    });
+    document.getElementById('btn-test-transition').addEventListener('click', () => {
+      goToSlide(state.currentSlide + 1);
+    });
+
+    // Logo XYZ Pose & Float Sliders
+    bindSlider('slider-pose-x', 'val-pose-x', 'poseX', (v) => `${v}°`);
+    bindSlider('slider-pose-y', 'val-pose-y', 'poseY', (v) => `${v}°`);
+    bindSlider('slider-pose-z', 'val-pose-z', 'poseZ', (v) => `${v}°`);
+    bindSlider('slider-float-speed', 'val-float-speed', 'floatSpeed', (v) => `${v.toFixed(1)}x`);
+    bindSlider('slider-float-amp', 'val-float-amp', 'floatAmp', (v) => v.toFixed(2));
+    bindSlider('slider-logo-scale', 'val-logo-scale', 'logoScale', (v) => `${v.toFixed(2)}x`, (v) => {
+      logoPoseGroup.scale.setScalar(v);
+    });
+
+    document.getElementById('btn-reset-pose').addEventListener('click', () => {
+      state.poseX = 0;
+      state.poseY = 0;
+      state.poseZ = 0;
+      document.getElementById('slider-pose-x').value = 0;
+      document.getElementById('slider-pose-y').value = 0;
+      document.getElementById('slider-pose-z').value = 0;
+      document.getElementById('val-pose-x').textContent = '0°';
+      document.getElementById('val-pose-y').textContent = '0°';
+      document.getElementById('val-pose-z').textContent = '0°';
+    });
+
+    // Individual Perpendicular Ring Radius Sliders
+    ['slider-ring1-rad', 'slider-ring2-rad', 'slider-ring3-rad'].forEach((id, idx) => {
+      const slider = document.getElementById(id);
+      const valSpan = document.getElementById(`val-ring${idx + 1}-rad`);
+      slider.addEventListener('input', (e) => {
+        const r = parseFloat(e.target.value);
+        state.ringRadii[idx] = r;
+        valSpan.textContent = r.toFixed(2);
+        rebuildSingleRing(idx, r);
+      });
+    });
+
+    bindSlider('slider-ring-speed', 'val-ring-speed', 'ringSpeed', (v) => `${v.toFixed(2)}x`);
+
+    // UnrealBloom & Normal Map Sliders
+    bindSlider('slider-bloom-strength', 'val-bloom-strength', 'bloomStrength', (v) => v.toFixed(2), (v) => {
+      bloomPass.strength = state.backdropMode === 'marble' ? Math.min(v, 0.38) : v;
+    });
+    bindSlider('slider-bloom-radius', 'val-bloom-radius', 'bloomRadius', (v) => v.toFixed(2), (v) => {
+      bloomPass.radius = v;
+    });
+    bindSlider('slider-normal-scale', 'val-normal-scale', 'normalScale', (v) => v.toFixed(2), (v) => {
+      goldPBRMaterial.normalScale.set(v * 0.12, v * 0.12);
+    });
+
+    // -------------------------------------------------------------------------
+    // 11. EMBED CODE SNIPPET GENERATOR MODAL
+    // -------------------------------------------------------------------------
+    const embedModal = document.getElementById('embed-modal');
+    const embedTextarea = document.getElementById('embed-code-textarea');
+    const copyFeedback = document.getElementById('copy-feedback');
+
+    document.getElementById('btn-open-embed').addEventListener('click', () => {
+      embedTextarea.value = `<!-- BRAVEN BUSINESS CENTER — 3D Metallic Gold PBR Logo & Smart Signage Embed -->
+<div style="position:relative;width:100%;height:640px;overflow:hidden;border-radius:16px;background:#0d0a07;">
+  <iframe
+    src="${window.location.href}"
+    style="width:100%;height:100%;border:0;"
+    allow="autoplay; fullscreen; xr-spatial-tracking"
+    loading="lazy"
+    title="Braven Business Center 3D Metallic Gold Signage">
+  </iframe>
+</div>
+<!-- Active Preset: Pose(${state.poseX}°, ${state.poseY}°, ${state.poseZ}°) | Rings(${state.ringRadii.join(', ')}) | SlideSpeed(${state.slideDuration}s) | UIAmp(${state.uiAmp}x) -->`;
+      embedModal.classList.remove('hidden');
+      embedModal.classList.add('flex');
+    });
+
+    document.getElementById('btn-close-embed').addEventListener('click', () => {
+      embedModal.classList.add('hidden');
+      embedModal.classList.remove('flex');
+    });
+
+    document.getElementById('btn-copy-snippet').addEventListener('click', () => {
+      embedTextarea.select();
+      document.execCommand('copy');
+      copyFeedback.style.opacity = '1';
+      setTimeout(() => {
+        copyFeedback.style.opacity = '0';
+      }, 2200);
+    });
+
+    // -------------------------------------------------------------------------
+    // 12. RESPONSIVE RESIZE & 60FPS ANIMATION LOOP
+    // -------------------------------------------------------------------------
+    function handleResize() {
+      const w = getSafeWidth();
+      const h = getSafeHeight();
+      const pr = getPixelRatio();
+      camera.aspect = w / h;
+      camera.fov = w < 640 ? 48 : 38;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(pr);
+      renderer.setSize(w, h);
+      composer.setPixelRatio(pr);
+      composer.setSize(w, h);
+      bloomPass.resolution.set(w * pr, h * pr);
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    const clock = new THREE.Clock();
+    const degToRad = THREE.MathUtils.degToRad;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.getElapsedTime();
+
+      // 1. Autoplay Slide Timer & RPM Tachometer Bar
+      if (state.autoplay && signageVisible && !document.body.classList.contains('zen-mode')) {
+        slideTimerElapsed += dt;
+        const pct = Math.min((slideTimerElapsed / state.slideDuration) * 100, 100);
+        domProgressBar.style.width = `${pct}%`;
+
+        if (slideTimerElapsed >= state.slideDuration) {
+          goToSlide(state.currentSlide + 1);
+        }
+      }
+
+      // 2. Smoothly decay the Nitrous Transition Spin Boost back to 0 (scaled by UI Amplification)
+      state.nitroSpinBoost = THREE.MathUtils.lerp(state.nitroSpinBoost, 0, dt * 3.5);
+      const effectiveRingSpeed = state.ringSpeed + state.nitroSpinBoost * state.uiAmp;
+
+      // 3. Rotate ALL 3 Strictly Perpendicular (90° Orthogonal) Golden Rings
+      ringTumblers[0].rotation.x += dt * 0.50 * effectiveRingSpeed;
+      ringTumblers[0].rotation.y += dt * 0.14 * effectiveRingSpeed;
+
+      ringTumblers[1].rotation.y += dt * 0.44 * effectiveRingSpeed;
+      ringTumblers[1].rotation.x += dt * 0.12 * effectiveRingSpeed;
+
+      ringTumblers[2].rotation.x += dt * 0.38 * effectiveRingSpeed;
+      ringTumblers[2].rotation.y += dt * 0.16 * effectiveRingSpeed;
+
+      // 4. Continuous Floating Levitation Animation on the 3D Logo
+      const floatY = Math.sin(elapsed * state.floatSpeed) * state.floatAmp;
+      const breathTiltX = Math.cos(elapsed * state.floatSpeed * 0.7) * 0.035;
+      const breathTiltZ = Math.sin(elapsed * state.floatSpeed * 0.5) * 0.025;
+      logoFloatGroup.position.y = floatY;
+
+      // Combine User XYZ Pose Sliders + Subtle Slide Choreography Framing
+      const targetRotX = degToRad(state.poseX + (signageVisible ? state.choreoPose.x * 0.35 : 0)) + breathTiltX;
+      const targetRotY = degToRad(state.poseY + (signageVisible ? state.choreoPose.y * 0.35 : 0));
+      const targetRotZ = degToRad(state.poseZ + (signageVisible ? state.choreoPose.z * 0.35 : 0)) + breathTiltZ;
+
+      logoPoseGroup.rotation.x = THREE.MathUtils.lerp(logoPoseGroup.rotation.x, targetRotX, dt * 4.5);
+      logoPoseGroup.rotation.y = THREE.MathUtils.lerp(logoPoseGroup.rotation.y, targetRotY, dt * 4.5);
+      logoPoseGroup.rotation.z = THREE.MathUtils.lerp(logoPoseGroup.rotation.z, targetRotZ, dt * 4.5);
+
+      // 5. Orbit Specular Glint Lights so the 24K Gold PBR surface shimmers continuously
+      glintLight1.position.set(
+        Math.cos(elapsed * 0.9) * 6.5,
+        Math.sin(elapsed * 1.1) * 4.5,
+        4.5 + Math.sin(elapsed * 0.7) * 2.0
+      );
+      glintLight2.position.set(
+        Math.sin(elapsed * 0.8) * -6.5,
+        Math.cos(elapsed * 0.6) * 5.0,
+        3.5 + Math.cos(elapsed * 0.9) * 2.5
+      );
+
+      // 6. Slowly drift ambient gold dust particles
+      goldParticles.rotation.y = elapsed * 0.04;
+      goldParticles.rotation.x = Math.sin(elapsed * 0.15) * 0.08;
+
+      controls.update();
+
+      // Use direct renderer with alpha clear when in 'alpha' mode, or high-DPI MSAA Bloom Composer otherwise
+      if (state.backdropMode === 'alpha') {
+        renderer.render(scene, camera);
+      } else {
+        composer.render();
+      }
+    }
+
+    animate();
+  </script>
+</body>
+</html>
