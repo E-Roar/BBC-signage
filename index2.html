@@ -1,0 +1,2494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, initial-scale=1.0, user-scalable=no" />
+  <title>Braven Business Center — Affichage Dynamique 3D Or 24K</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts for Distance-Readable Racing Signage -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;600;700&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Three.js Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --ui-amp: 1.25;
+      --bloom-css: 0.55;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+      background-color: #090704;
+    }
+    /* Lightweight CSS Themes (Zero heavy repaints) */
+    body.bg-luxury {
+      background: radial-gradient(circle at 50% 42%, #241b0d 0%, #0d0a06 60%, #050403 100%);
+    }
+    body.bg-white-studio {
+      background: radial-gradient(circle at 50% 45%, #ffffff 0%, #f3efe6 65%, #dfd8c8 100%);
+    }
+    body.bg-grid {
+      background: radial-gradient(circle at 50% 45%, #1f1708 0%, #090704 70%, #040302 100%);
+    }
+    body.bg-transparent-grid {
+      background-color: #111113;
+      background-image:
+        linear-gradient(45deg, #1d1d22 25%, transparent 25%),
+        linear-gradient(-45deg, #1d1d22 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1d1d22 75%),
+        linear-gradient(-45deg, transparent 75%, #1d1d22 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+    }
+
+    #braven-3d-widget {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    /* Scrollbar for compact studio drawer */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(12, 9, 5, 0.7);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(234, 188, 68, 0.5);
+      border-radius: 9999px;
+    }
+
+    /* View Mode Transitions */
+    .ui-chrome {
+      transition: opacity 0.28s ease, transform 0.28s ease;
+    }
+    .signage-hud {
+      transition: opacity 0.3s ease;
+    }
+    /* Pure 3D Zen Mode hides studio chrome AND signage HUD */
+    body.zen-mode .ui-chrome,
+    body.zen-mode .signage-hud {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    /* Kiosk Mode (ACTIVE BY DEFAULT) hides top studio header & drawer, keeping 3D Scene + Signage HUD */
+    body.kiosk-mode .ui-chrome {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    .font-racing-title {
+      font-family: 'Orbitron', 'Chakra Petch', sans-serif;
+    }
+    .font-racing-hud {
+      font-family: 'Chakra Petch', sans-serif;
+    }
+
+    /* =========================================================================
+       FORCED DESKTOP LAYOUT + HIGH-CONTRAST DARK CARDS & DIRECT GOLD TEXT (NO BEVEL)
+       ========================================================================= */
+    .pbr-gold-big-title {
+      color: #ffd84d;
+      background: none;
+      -webkit-text-fill-color: #ffd84d;
+      text-shadow: none;
+      transform: translateZ(0);
+    }
+
+    .gold-pbr-panel {
+      position: relative;
+      background: linear-gradient(
+        145deg,
+        #120e08 0%,
+        #090704 55%,
+        #161109 100%
+      );
+      border: 2px solid #e6b83a;
+      box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.85),
+        inset 0 1px 0 rgba(255, 224, 102, 0.35);
+      overflow: hidden;
+      will-change: transform, opacity;
+      transform: translateZ(0);
+      contain: layout style paint;
+      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* Solid Opaque Studio Controls Drawer & Top Header */
+    #studio-sliders-drawer {
+      background-color: #0c0905 !important;
+      border: 2px solid #e6b83a !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95) !important;
+    }
+    header.ui-chrome {
+      background-color: #0c0905 !important;
+    }
+
+    /* Bandeau supérieur métallique Or 24K pur pour les badges */
+    .gold-metallic-ribbon {
+      background: #ffd447;
+      color: #0d0902;
+    }
+
+    /* Colonnes Cockpit FORCÉES EN MODE DESKTOP (Toujours à gauche et à droite, centre dégagé pour la 3D) */
+    .signage-wing-column {
+      width: clamp(250px, 24vw, 390px);
+      flex: 0 0 clamp(250px, 24vw, 390px);
+    }
+
+    /* Carte Hero Principale */
+    .signage-hero-card {
+      min-height: 175px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-width: 2px;
+      border-color: #f5c84c;
+      clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+    }
+
+    /* Carte Boost Compacte */
+    .signage-boost-card {
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+    }
+
+    /* Cartes Tactiques Droite */
+    .signage-tactical-card {
+      min-height: 148px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+    }
+
+    /* Fast GPU-Only Glint Sweep on Hover */
+    .gold-pbr-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, transparent 20%, rgba(255, 250, 210, 0.35) 50%, transparent 80%);
+      transform: translateX(-115%);
+      transition: transform 0.45s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .gold-pbr-panel:hover::before {
+      transform: translateX(115%);
+    }
+
+    /* Liseré Racing Or 24K Lumineux en bas des panneaux */
+    .gold-pbr-panel::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 5px;
+      background: repeating-linear-gradient(
+        -45deg,
+        #fff2b2,
+        #fff2b2 12px,
+        #d49617 12px,
+        #d49617 24px
+      );
+      opacity: 0.95;
+    }
+
+    /* Equalizer Animation for Audio Player */
+    @keyframes eqBounce {
+      0%, 100% { transform: scaleY(0.3); }
+      50% { transform: scaleY(1); }
+    }
+    .eq-bar-active {
+      animation: eqBounce 0.6s ease-in-out infinite;
+      transform-origin: bottom;
+    }
+
+    /* Pure Transform + Opacity Racing Skew & Cascade Animations (Zero Filter Blur for Smart TVs) */
+    .racing-skew-left {
+      transform: skewX(calc(-6deg * var(--ui-amp, 1.25)));
+    }
+    .racing-unskew-left {
+      transform: skewX(calc(6deg * var(--ui-amp, 1.25)));
+    }
+    .racing-skew-left:hover {
+      border-color: #fff3b0;
+      transform:
+        skewX(calc(-7deg * var(--ui-amp, 1.25)))
+        translateX(calc(10px * var(--ui-amp, 1.25)))
+        scale(calc(1 + 0.025 * var(--ui-amp, 1.25))) !important;
+    }
+
+    .racing-skew-right {
+      transform: skewX(calc(-6deg * var(--ui-amp, 1.25)));
+    }
+    .racing-unskew-right {
+      transform: skewX(calc(6deg * var(--ui-amp, 1.25)));
+    }
+    .racing-skew-right:hover {
+      border-color: #fff3b0;
+      transform:
+        skewX(calc(-7deg * var(--ui-amp, 1.25)))
+        translateX(calc(-10px * var(--ui-amp, 1.25)))
+        scale(calc(1 + 0.025 * var(--ui-amp, 1.25))) !important;
+    }
+
+    @keyframes cascadeSlamLeft {
+      0% {
+        opacity: 0;
+        transform: skewX(calc(-12deg * var(--ui-amp, 1.25))) translate3d(calc(-110px * var(--ui-amp, 1.25)), 0, 0) scale(0.94);
+      }
+      70% {
+        opacity: 1;
+        transform: skewX(calc(-6deg * var(--ui-amp, 1.25))) translate3d(calc(8px * var(--ui-amp, 1.25)), 0, 0) scale(1.01);
+      }
+      100% {
+        opacity: 1;
+        transform: skewX(calc(-6deg * var(--ui-amp, 1.25))) translate3d(0, 0, 0) scale(1);
+      }
+    }
+
+    @keyframes cascadeSlamRight {
+      0% {
+        opacity: 0;
+        transform: skewX(calc(-12deg * var(--ui-amp, 1.25))) translate3d(calc(110px * var(--ui-amp, 1.25)), 0, 0) scale(0.94);
+      }
+      70% {
+        opacity: 1;
+        transform: skewX(calc(-6deg * var(--ui-amp, 1.25))) translate3d(calc(-8px * var(--ui-amp, 1.25)), 0, 0) scale(1.01);
+      }
+      100% {
+        opacity: 1;
+        transform: skewX(calc(-6deg * var(--ui-amp, 1.25))) translate3d(0, 0, 0) scale(1);
+      }
+    }
+
+    @keyframes cascadeWhipOutLeft {
+      0% {
+        opacity: 1;
+        transform: skewX(calc(-6deg * var(--ui-amp, 1.25))) translate3d(0, 0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: skewX(calc(-15deg * var(--ui-amp, 1.25))) translate3d(calc(-120px * var(--ui-amp, 1.25)), 0, 0) scale(0.92);
+      }
+    }
+
+    @keyframes cascadeWhipOutRight {
+      0% {
+        opacity: 1;
+        transform: skewX(calc(-6deg * var(--ui-amp, 1.25))) translate3d(0, 0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: skewX(calc(-15deg * var(--ui-amp, 1.25))) translate3d(calc(120px * var(--ui-amp, 1.25)), 0, 0) scale(0.92);
+      }
+    }
+
+    .cascade-in-left {
+      animation: cascadeSlamLeft 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .cascade-out-left {
+      animation: cascadeWhipOutLeft 0.16s ease-in forwards;
+    }
+    .cascade-in-right {
+      animation: cascadeSlamRight 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .cascade-out-right {
+      animation: cascadeWhipOutRight 0.16s ease-in forwards;
+    }
+
+    @keyframes speedSlashFlash {
+      0% {
+        opacity: 0;
+        transform: translate3d(-110%, 0, 0) skewX(-24deg);
+      }
+      35% {
+        opacity: 0.65;
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(115%, 0, 0) skewX(-24deg);
+      }
+    }
+    .speed-slash-active {
+      animation: speedSlashFlash 0.42s ease-out forwards;
+    }
+
+    /* Metallic Gold Navigation Buttons (Bright 24K Gold) */
+    .gold-nav-btn {
+      position: relative;
+      background: linear-gradient(180deg, #785410 0%, #3d2905 100%);
+      border: 2px solid #ffe066;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 215, 70, 0.25);
+      transform: skewX(-12deg);
+      transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+    .gold-nav-btn:hover {
+      background: linear-gradient(135deg, #fff5c0 0%, #ffd84d 55%, #e09f1f 100%);
+      color: #140d02 !important;
+      border-color: #ffffff;
+      transform: skewX(-12deg) translateY(-2px) scale(1.04);
+    }
+    .gold-nav-btn:active {
+      transform: skewX(-12deg) scale(0.97);
+    }
+  </style>
+</head>
+<!-- KIOSK MODE ACTIVE BY DEFAULT -->
+<body class="bg-luxury text-amber-50 kiosk-mode">
+
+  <!-- MAIN RESPONSIVE 3D CONTAINER -->
+  <div id="braven-3d-widget" aria-label="Braven Business Center Logo 3D Or 24K"></div>
+
+  <!-- DIAGONAL RACING GOLD SPEED-LINES OVERLAY -->
+  <div id="speed-slash-overlay" class="fixed inset-0 pointer-events-none z-10 overflow-hidden">
+    <div id="speed-slash-bar" class="opacity-0 w-1/2 h-full bg-gradient-to-r from-transparent via-yellow-300/35 to-transparent"></div>
+  </div>
+
+  <!-- =========================================================================
+       SMART SIGNAGE SLIDESHOW HUD OVERLAY (PARCOURS CLIENT EN FRANÇAIS)
+       Disposition Cockpit Incurvée : Bandeau d'Accroche Central + Aile Hero Gauche + Aile Tactique Droite
+       ========================================================================= -->
+  <section id="smart-signage-hud" class="signage-hud fixed inset-0 z-10 pointer-events-none flex flex-col justify-between p-6 overflow-hidden">
+
+    <!-- BANDEAU SUPÉRIEUR : TÉLÉMÉTRIE + ACCROCHE PSYCHOLOGIQUE CENTRALE + INDICATEUR CLÉ -->
+    <div class="w-full flex flex-row items-center justify-between gap-4 pt-1">
+      <!-- Compteur d'Acte à Gauche -->
+      <div class="pointer-events-auto flex items-center gap-3 px-4 py-2 gold-pbr-panel racing-skew-left">
+        <div class="racing-unskew-left flex items-center gap-3 relative z-10">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+          <span id="signage-top-sector" class="font-racing-hud font-bold tracking-[0.22em] text-sm text-[#ffd84d] uppercase">
+            ACTE 01 // 06
+          </span>
+          <div class="h-3.5 w-[1px] bg-yellow-400/40"></div>
+          <div class="flex items-center gap-1">
+            <span class="w-2 h-2.5 bg-yellow-400"></span>
+            <span class="w-2 h-2.5 bg-yellow-300"></span>
+            <span class="w-2 h-2.5 bg-yellow-200"></span>
+            <span class="w-2 h-2.5 bg-white"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accroche Psychologique Centrale (Le Pourquoi Immédiat) -->
+      <div id="signage-hook-pill" class="pointer-events-auto mx-auto px-5 py-2 gold-pbr-panel racing-skew-left cursor-pointer">
+        <div class="racing-unskew-left flex items-center gap-3 relative z-10">
+          <span class="text-[#ffd84d] font-racing-title text-sm font-black">✦</span>
+          <p id="signage-hook-text" class="font-racing-hud font-bold text-base tracking-[0.16em] text-white uppercase text-center">
+            VOTRE EMPIRE MÉRITE UNE ADRESSE D'EXCEPTION
+          </p>
+          <span class="text-[#ffd84d] font-racing-title text-sm font-black">✦</span>
+        </div>
+      </div>
+
+      <!-- Pilule de Promesse / Vitesse à Droite -->
+      <div id="signage-metric-pill" class="pointer-events-auto flex items-center gap-2.5 px-4 py-2 gold-pbr-panel racing-skew-left cursor-pointer">
+        <div class="racing-unskew-left flex items-center gap-2.5 relative z-10">
+          <span class="text-xs font-racing-hud font-bold uppercase tracking-[0.2em] text-[#ffd84d]">PROMESSE</span>
+          <span id="signage-metric-text" class="font-racing-title font-black text-sm tracking-wider text-black bg-[#ffd84d] px-2.5 py-0.5">
+            PRESTIGE ABSOLU
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZONE COCKPIT CENTRALE : TOUJOURS EN LIGNE DESKTOP (GAUCHE + ESPACE 3D CENTRAL + DROITE) -->
+    <div class="w-full my-auto flex flex-row items-center justify-between gap-6 py-2">
+
+      <!-- AILE GAUCHE : 1 GRAND PANNEAU HERO + 1 MODULE TURBO DÉCALÉ -->
+      <div class="signage-wing-column pointer-events-auto flex flex-col justify-center gap-4">
+
+        <!-- CARTE 0 : GRAND FORMAT HERO SPOTLIGHT -->
+        <div id="sym-card-0" class="gold-pbr-panel signage-hero-card racing-skew-left p-5 cursor-pointer cascade-in-left" style="animation-delay: 0.02s;">
+          <span class="absolute top-2.5 left-2.5 w-3.5 h-3.5 border-t-2 border-l-2 border-[#ffd84d]"></span>
+          <span class="absolute top-2.5 right-2.5 w-3.5 h-3.5 border-t-2 border-r-2 border-[#ffd84d]"></span>
+          <span class="absolute bottom-2.5 left-2.5 w-3.5 h-3.5 border-b-2 border-l-2 border-[#ffd84d]"></span>
+          <span class="absolute bottom-2.5 right-2.5 w-3.5 h-3.5 border-b-2 border-r-2 border-[#ffd84d]"></span>
+
+          <div class="racing-unskew-left relative z-10 flex flex-col h-full justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 px-3 py-1 gold-metallic-ribbon">
+                <span class="w-2 h-2 bg-black rotate-45"></span>
+                <span id="card-badge-0" class="font-racing-hud font-extrabold text-xs tracking-[0.18em] uppercase">
+                  L'IMAGE QUI IMPOSE
+                </span>
+              </div>
+              <span class="text-[#ffd84d] font-racing-title text-sm font-black tracking-widest">★ N°1</span>
+            </div>
+
+            <h2 id="card-title-0" class="font-racing-title font-black uppercase tracking-tight leading-[1.06] text-2xl xl:text-[28px] pbr-gold-big-title my-2">
+              DOMINEZ VOTRE MARCHÉ
+            </h2>
+
+            <div class="flex items-center gap-3 pt-1.5 border-t border-yellow-500/30">
+              <div class="h-4 w-1.5 bg-[#ffd84d]"></div>
+              <p id="card-sub-0" class="font-racing-hud font-bold text-sm tracking-[0.12em] text-white uppercase">
+                UNE ADRESSE QUI SIGNE VOS CONTRATS
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARTE 1 : MODULE COMPACT "TURBO BOOST" -->
+        <div id="sym-card-1" class="gold-pbr-panel signage-boost-card ml-5 racing-skew-left p-4 cursor-pointer cascade-in-left" style="animation-delay: 0.08s;">
+          <span class="absolute top-2 left-2 w-2.5 h-2.5 border-t-2 border-l-2 border-[#ffd84d]"></span>
+          <span class="absolute bottom-2 right-2 w-2.5 h-2.5 border-b-2 border-r-2 border-[#ffd84d]"></span>
+
+          <div class="racing-unskew-left relative z-10 flex flex-col h-full justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-zinc-900 border border-[#ffd84d]">
+                <span class="w-1.5 h-1.5 bg-[#ffd84d] rotate-45"></span>
+                <span id="card-badge-1" class="font-racing-hud font-bold text-xs tracking-[0.2em] text-[#ffd84d] uppercase">
+                  EFFET IMMÉDIAT
+                </span>
+              </div>
+              <span class="text-[#ffd84d] font-racing-title font-black text-xs">⚡ FLASH</span>
+            </div>
+
+            <h2 id="card-title-1" class="font-racing-title font-black uppercase tracking-tight leading-[1.06] text-xl xl:text-2xl pbr-gold-big-title my-1">
+              100% CLÉ EN MAIN
+            </h2>
+
+            <div class="flex items-center gap-2.5">
+              <div class="h-3.5 w-1.5 bg-[#ffd84d]"></div>
+              <p id="card-sub-1" class="font-racing-hud font-bold text-xs tracking-[0.14em] text-white uppercase">
+                ZÉRO ATTENTE • OPÉRATIONNEL CE JOUR
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AILE DROITE : 2 MODULES TACTIQUES EN COURBE ORBITALE -->
+      <div class="signage-wing-column pointer-events-auto flex flex-col justify-center gap-4">
+
+        <!-- CARTE 2 : MODULE TACTIQUE SUPÉRIEUR -->
+        <div id="sym-card-2" class="gold-pbr-panel signage-tactical-card mr-5 racing-skew-right p-4 cursor-pointer cascade-in-right" style="animation-delay: 0.05s;">
+          <span class="absolute top-2 left-2 w-2.5 h-2.5 border-t-2 border-l-2 border-[#ffd84d]"></span>
+          <span class="absolute top-2 right-2 w-2.5 h-2.5 border-t-2 border-r-2 border-[#ffd84d]"></span>
+          <span class="absolute bottom-2 left-2 w-2.5 h-2.5 border-b-2 border-l-2 border-[#ffd84d]"></span>
+          <span class="absolute bottom-2 right-2 w-2.5 h-2.5 border-b-2 border-r-2 border-[#ffd84d]"></span>
+
+          <div class="racing-unskew-right relative z-10 flex flex-col h-full justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 px-2.5 py-0.5 bg-zinc-900 border border-[#ffd84d]">
+                <span class="w-1.5 h-1.5 bg-[#ffd84d] rotate-45"></span>
+                <span id="card-badge-2" class="font-racing-hud font-bold text-xs tracking-[0.2em] text-[#ffd84d] uppercase">
+                  BUREAUX EXÉCUTIFS
+                </span>
+              </div>
+              <span class="text-[#ffd84d] font-racing-title text-xs font-black">»»»</span>
+            </div>
+
+            <h2 id="card-title-2" class="font-racing-title font-black uppercase tracking-tight leading-[1.06] text-xl xl:text-2xl pbr-gold-big-title my-1.5">
+              LUXE &amp; CALME ABSOLU
+            </h2>
+
+            <div class="flex items-center gap-2.5 pt-1 border-t border-yellow-500/30">
+              <div class="h-4 w-1.5 bg-[#ffd84d]"></div>
+              <p id="card-sub-2" class="font-racing-hud font-bold text-xs tracking-[0.13em] text-white uppercase">
+                MOBILIER DE DIRECTION SUR-MESURE
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARTE 3 : MODULE PRIVILÈGE INFÉRIEUR -->
+        <div id="sym-card-3" class="gold-pbr-panel signage-tactical-card ml-3 racing-skew-right p-4 cursor-pointer cascade-in-right" style="animation-delay: 0.11s;">
+          <span class="absolute top-2 left-2 w-2.5 h-2.5 border-t-2 border-l-2 border-[#ffd84d]"></span>
+          <span class="absolute top-2 right-2 w-2.5 h-2.5 border-t-2 border-r-2 border-[#ffd84d]"></span>
+          <span class="absolute bottom-2 left-2 w-2.5 h-2.5 border-b-2 border-l-2 border-[#ffd84d]"></span>
+          <span class="absolute bottom-2 right-2 w-2.5 h-2.5 border-b-2 border-r-2 border-[#ffd84d]"></span>
+
+          <div class="racing-unskew-right relative z-10 flex flex-col h-full justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex items-center gap-2 px-3 py-0.5 gold-metallic-ribbon">
+                <span class="w-1.5 h-1.5 bg-black rotate-45"></span>
+                <span id="card-badge-3" class="font-racing-hud font-extrabold text-xs tracking-[0.18em] uppercase">
+                  ACCÈS PRIVILÈGE
+                </span>
+              </div>
+              <span class="text-[#ffd84d] font-racing-title font-bold text-sm">◢ VIP</span>
+            </div>
+
+            <h2 id="card-title-3" class="font-racing-title font-black uppercase tracking-tight leading-[1.06] text-xl xl:text-2xl pbr-gold-big-title my-1.5">
+              LIBERTÉ 24H/24 • 7J/7
+            </h2>
+
+            <div class="flex items-center gap-2.5 pt-1 border-t border-yellow-500/30">
+              <div class="h-4 w-1.5 bg-[#ffd84d]"></div>
+              <p id="card-sub-3" class="font-racing-hud font-bold text-xs tracking-[0.13em] text-white uppercase">
+                CONTRÔLE BIOMÉTRIQUE &amp; SÉCURITÉ VIP
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSOLE DE NAVIGATION INFÉRIEURE EN OR 24K -->
+    <div class="w-full flex flex-col items-center justify-end gap-2 pointer-events-none">
+      <div class="pointer-events-auto flex flex-wrap items-center justify-center gap-3 sm:gap-5 px-5 py-2.5 gold-pbr-panel">
+        <!-- BOUTON PRÉCÉDENT -->
+        <button id="btn-prev-slide" type="button" class="gold-nav-btn px-5 sm:px-6 py-2 text-yellow-100 font-racing-title font-black text-xs sm:text-sm tracking-[0.18em] uppercase cursor-pointer relative z-10">
+          <span class="inline-block skew-x-[12deg]">◄ PRÉC</span>
+        </button>
+
+        <!-- JAUGE DE PROGRESSION & INDICATEURS D'ACTES -->
+        <div class="flex flex-col items-center gap-1 min-w-[180px] sm:min-w-[240px] relative z-10">
+          <div class="w-full flex items-center justify-between text-[10px] font-racing-hud tracking-[0.18em] text-yellow-200 uppercase">
+            <button id="btn-toggle-autoplay" type="button" class="flex items-center gap-1.5 hover:text-white transition cursor-pointer">
+              <span id="autoplay-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span id="autoplay-label">AUTO : ACTIF</span>
+            </button>
+            <span id="slide-counter-readout" class="font-bold text-yellow-100">01 / 06</span>
+          </div>
+
+          <div class="w-full h-2 bg-amber-950/90 border border-yellow-300/60 overflow-hidden">
+            <div id="autoplay-progress-bar" class="h-full bg-gradient-to-r from-amber-400 via-yellow-300 to-white transition-none" style="width: 0%;"></div>
+          </div>
+
+          <div id="slide-dots-row" class="flex items-center gap-1.5 pt-0.5"></div>
+        </div>
+
+        <!-- BOUTON SUIVANT -->
+        <button id="btn-next-slide" type="button" class="gold-nav-btn px-5 sm:px-6 py-2 text-yellow-100 font-racing-title font-black text-xs sm:text-sm tracking-[0.18em] uppercase cursor-pointer relative z-10">
+          <span class="inline-block skew-x-[12deg]">SUIV ►</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       BARRE STUDIO SUPÉRIEURE (MASQUÉE PAR DÉFAUT EN MODE KIOSQUE)
+       ========================================================================= -->
+  <header class="ui-chrome fixed top-0 left-0 right-0 z-30 flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-zinc-950/95 border-b border-yellow-400/40">
+    <div class="flex items-center gap-2.5">
+      <div class="w-2.5 h-2.5 rotate-45 bg-yellow-400"></div>
+      <span class="font-racing-title font-extrabold text-xs sm:text-sm tracking-[0.16em] text-yellow-200">BRAVEN 3D OR 24K</span>
+      <span id="fps-badge" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono">
+        TV TURBO • 60 FPS
+      </span>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="btn-toggle-studio" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-amber-500/25 hover:bg-amber-500/40 text-yellow-200 border border-yellow-400/50 transition cursor-pointer">
+        ⚙ Réglages Studio &amp; Audio
+      </button>
+
+      <button id="btn-toggle-signage" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition cursor-pointer">
+        Panneaux : OUI
+      </button>
+
+      <button id="btn-kiosk-mode" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-zinc-900 hover:bg-zinc-800 text-yellow-200 border border-yellow-400/40 transition cursor-pointer">
+        Mode Kiosque TV
+      </button>
+
+      <button id="btn-zen-mode" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-zinc-900 hover:bg-zinc-800 text-yellow-200 border border-yellow-400/40 transition cursor-pointer">
+        3D Pure (H)
+      </button>
+
+      <button id="btn-open-embed" type="button" class="px-3 py-1.5 rounded text-xs font-semibold tracking-wider uppercase bg-gradient-to-r from-amber-400 to-yellow-300 text-black font-bold hover:brightness-110 transition cursor-pointer">
+        &lt;/&gt; Code HTML
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       TIROIR DE RÉGLAGES STUDIO & AUDIO (REPLIÉ PAR DÉFAUT, FOND 100% OPAQUE)
+       ========================================================================= -->
+  <aside id="studio-sliders-drawer" class="ui-chrome fixed top-12 right-4 z-30 w-[370px] max-h-[calc(100vh-70px)] overflow-y-auto rounded-xl bg-zinc-950 border-2 border-yellow-400 shadow-2xl p-4 transition-all duration-300 transform translate-x-[430px] opacity-0 pointer-events-none">
+    <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-amber-500/40">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+        <h2 class="font-racing-title text-xs font-bold tracking-[0.16em] text-yellow-300 uppercase">
+          Contrôles Studio &amp; Audio
+        </h2>
+      </div>
+      <button id="btn-close-studio" type="button" class="text-xs text-yellow-200 bg-zinc-900 hover:bg-zinc-800 px-2.5 py-1 rounded border border-yellow-400/50 cursor-pointer">
+        Replier ▲
+      </button>
+    </div>
+
+    <!-- GPU / SMART TV PERFORMANCE MODE SWITCHER -->
+    <div class="mb-3 p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/35 flex items-center justify-between">
+      <div>
+        <div class="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">Mode Turbo Smart TV</div>
+        <div class="text-[10px] text-emerald-100/75">Rendu GPU direct ultra-fluide (30–60 FPS)</div>
+      </div>
+      <button id="btn-perf-mode" type="button" class="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-400 text-black cursor-pointer">
+        TURBO : OUI
+      </button>
+    </div>
+
+    <!-- SECTION 0: DUAL-ENGINE LOOPING MUSIC PLAYER -->
+    <div class="space-y-2 pb-3.5 mb-3.5 border-b border-yellow-500/25 bg-zinc-900/90 p-3 rounded-lg border border-yellow-400/30">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div id="music-eq-bars" class="flex items-end gap-0.5 h-3.5">
+            <span class="eq-bar w-1 h-3.5 bg-yellow-400 eq-bar-active" style="animation-delay: 0s;"></span>
+            <span class="eq-bar w-1 h-3.5 bg-yellow-300 eq-bar-active" style="animation-delay: 0.18s;"></span>
+            <span class="eq-bar w-1 h-3.5 bg-yellow-400 eq-bar-active" style="animation-delay: 0.32s;"></span>
+            <span class="eq-bar w-1 h-3.5 bg-yellow-200 eq-bar-active" style="animation-delay: 0.12s;"></span>
+          </div>
+          <span class="text-[11px] font-racing-title font-bold uppercase tracking-wider text-yellow-300">
+            Ambiance Musicale
+          </span>
+        </div>
+        <span id="music-status-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+          PRÊT • BOUCLE
+        </span>
+      </div>
+
+      <div class="flex items-center justify-between gap-2 text-[11px] text-amber-100/90">
+        <span class="truncate">🎵 Afrobeat (<span class="font-mono text-yellow-300">ffCAdXPO0K0</span>)</span>
+        <select id="select-audio-engine" class="bg-zinc-950 text-yellow-200 border border-yellow-400/40 rounded px-1.5 py-0.5 text-[10px] font-mono cursor-pointer">
+          <option value="hybrid" selected>Hybride Auto</option>
+          <option value="synth">Synthé Afrobeat</option>
+          <option value="youtube">YouTube Seul</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1.5 pt-1">
+        <button id="btn-music-play" type="button" class="px-2 py-1.5 rounded bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-racing-title font-bold text-xs uppercase cursor-pointer">
+          ▶ Lecture
+        </button>
+        <button id="btn-music-stop" type="button" class="px-2 py-1.5 rounded bg-zinc-800 hover:bg-red-950 text-amber-100 border border-amber-500/35 font-racing-title font-bold text-xs uppercase cursor-pointer">
+          ■ Stop
+        </button>
+        <button id="btn-music-loop" type="button" class="px-2 py-1.5 rounded bg-yellow-500/20 text-yellow-200 border border-yellow-400/50 font-racing-title font-bold text-[10px] uppercase cursor-pointer">
+          🔁 Boucle : OUI
+        </button>
+      </div>
+
+      <div class="pt-1">
+        <div class="flex justify-between text-[11px] text-amber-100/80 mb-0.5">
+          <span>Volume Audio</span>
+          <span id="val-music-vol" class="font-mono text-yellow-300">75%</span>
+        </div>
+        <input id="slider-music-vol" type="range" min="0" max="100" step="1" value="75" class="w-full accent-yellow-400 cursor-pointer" />
+      </div>
+
+      <div class="relative w-full h-8 rounded overflow-hidden bg-black/80 border border-yellow-500/25 flex items-center justify-between px-2">
+        <span class="text-[10px] font-mono text-amber-200/75">Flux Audio YT</span>
+        <div class="w-24 h-7 overflow-hidden rounded opacity-85">
+          <div id="yt-audio-player"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 0B: SMART SIGNAGE SLIDESHOW SPEED & UI ANIMATION AMPLIFICATION -->
+    <div class="space-y-2 pb-3.5 mb-3.5 border-b border-amber-500/20">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-yellow-300">Cadence &amp; Impact UI</span>
+        <button id="btn-test-transition" type="button" class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/25 hover:bg-yellow-500/40 text-yellow-200 border border-yellow-400/50 font-semibold cursor-pointer">
+          ⚡ Tester Transition
+        </button>
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Durée par Diapositive</span>
+          <span id="val-slide-speed" class="font-mono text-yellow-300">7.0s</span>
+        </div>
+        <input id="slider-slide-speed" type="range" min="2.0" max="16.0" step="0.5" value="7.0" class="w-full accent-yellow-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Amplification Animation UI</span>
+          <span id="val-ui-amp" class="font-mono text-yellow-300">1.25x</span>
+        </div>
+        <input id="slider-ui-amp" type="range" min="0.2" max="2.5" step="0.05" value="1.25" class="w-full accent-yellow-400 cursor-pointer" />
+      </div>
+    </div>
+
+    <!-- SECTION 1: LOGO XYZ ROTATION POSE & FLOATING ANIMATION -->
+    <div class="space-y-2 pb-3.5 mb-3.5 border-b border-amber-500/20">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-300">1. Pose XYZ &amp; Flottement</span>
+        <button id="btn-reset-pose" type="button" class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/40 text-amber-200 border border-amber-500/30 cursor-pointer">
+          Réinitialiser (0°)
+        </button>
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Inclinaison X</span>
+          <span id="val-pose-x" class="font-mono text-amber-300">0°</span>
+        </div>
+        <input id="slider-pose-x" type="range" min="-180" max="180" step="1" value="0" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Rotation Y</span>
+          <span id="val-pose-y" class="font-mono text-amber-300">0°</span>
+        </div>
+        <input id="slider-pose-y" type="range" min="-180" max="180" step="1" value="0" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Roulis Z</span>
+          <span id="val-pose-z" class="font-mono text-amber-300">0°</span>
+        </div>
+        <input id="slider-pose-z" type="range" min="-180" max="180" step="1" value="0" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 pt-1">
+        <div>
+          <div class="flex justify-between text-[11px] text-amber-100/80 mb-0.5">
+            <span>Vitesse Flottement</span>
+            <span id="val-float-speed" class="font-mono text-amber-300">1.4x</span>
+          </div>
+          <input id="slider-float-speed" type="range" min="0" max="4" step="0.1" value="1.4" class="w-full accent-amber-400 cursor-pointer" />
+        </div>
+        <div>
+          <div class="flex justify-between text-[11px] text-amber-100/80 mb-0.5">
+            <span>Amplitude</span>
+            <span id="val-float-amp" class="font-mono text-amber-300">0.20</span>
+          </div>
+          <input id="slider-float-amp" type="range" min="0" max="0.8" step="0.02" value="0.20" class="w-full accent-amber-400 cursor-pointer" />
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: LOGO SIZE & INDIVIDUAL PERPENDICULAR RING RADII -->
+    <div class="space-y-2 pb-3.5 mb-3.5 border-b border-amber-500/20">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-300">2. Taille Logo &amp; Anneaux 90°</span>
+        <span class="text-[10px] font-mono text-amber-400/80">X ⊥ Y ⊥ Z</span>
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Échelle Logo 3D</span>
+          <span id="val-logo-scale" class="font-mono text-amber-300">1.00x</span>
+        </div>
+        <input id="slider-logo-scale" type="range" min="0.4" max="1.8" step="0.02" value="1.00" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Rayon Anneau 1 (Axe X)</span>
+          <span id="val-ring1-rad" class="font-mono text-amber-300">3.55</span>
+        </div>
+        <input id="slider-ring1-rad" type="range" min="2.2" max="6.2" step="0.05" value="3.55" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Rayon Anneau 2 (Axe Y ⊥)</span>
+          <span id="val-ring2-rad" class="font-mono text-amber-300">4.05</span>
+        </div>
+        <input id="slider-ring2-rad" type="range" min="2.2" max="6.5" step="0.05" value="4.05" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Rayon Anneau 3 (Axe Z ⊥)</span>
+          <span id="val-ring3-rad" class="font-mono text-amber-300">4.55</span>
+        </div>
+        <input id="slider-ring3-rad" type="range" min="2.2" max="6.8" step="0.05" value="4.55" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Vitesse Rotation Anneaux</span>
+          <span id="val-ring-speed" class="font-mono text-amber-300">1.00x</span>
+        </div>
+        <input id="slider-ring-speed" type="range" min="0" max="3" step="0.05" value="1.00" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+    </div>
+
+    <!-- SECTION 3: BLOOM HALO, FRONT LIGHT & STUDIO BACKDROP -->
+    <div class="space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-300">3. Éclat Or &amp; Fond Studio</span>
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Intensité Halo Or (Bloom)</span>
+          <span id="val-bloom-strength" class="font-mono text-amber-300">0.65</span>
+        </div>
+        <input id="slider-bloom-strength" type="range" min="0" max="2.0" step="0.05" value="0.65" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Éclairage Face Avant</span>
+          <span id="val-front-light" class="font-mono text-amber-300">4.2</span>
+        </div>
+        <input id="slider-front-light" type="range" min="1.0" max="8.0" step="0.2" value="4.2" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs text-amber-100/80 mb-0.5">
+          <span>Grain Or PBR (Normal Map)</span>
+          <span id="val-normal-scale" class="font-mono text-amber-300">0.85</span>
+        </div>
+        <input id="slider-normal-scale" type="range" min="0" max="2.0" step="0.05" value="0.85" class="w-full accent-amber-400 cursor-pointer" />
+      </div>
+
+      <div class="pt-1.5">
+        <div class="flex justify-between text-xs text-amber-100/80 mb-1">
+          <span>Décor Studio 3D</span>
+          <span id="val-backdrop-mode" class="font-mono text-yellow-300 text-[11px]">Obsidienne</span>
+        </div>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button type="button" data-bg="obsidian" class="bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-amber-500/35 border border-yellow-400 text-yellow-100 cursor-pointer">Obsidienne</button>
+          <button type="button" data-bg="marble" class="bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-zinc-800 border border-zinc-700 text-amber-100 hover:border-yellow-400/50 cursor-pointer">Marbre</button>
+          <button type="button" data-bg="grid" class="bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-zinc-800 border border-zinc-700 text-amber-100 hover:border-yellow-400/50 cursor-pointer">Grille Or</button>
+          <button type="button" data-bg="alpha" class="bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-zinc-800 border border-zinc-700 text-amber-100 hover:border-yellow-400/50 cursor-pointer">Alpha</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- BOUTON FLOTTANT CONTRÔLES STUDIO (VISIBLE PAR DÉFAUT EN BAS À DROITE) -->
+  <button id="btn-restore-ui" type="button" class="fixed bottom-3 right-3 z-40 flex items-center gap-2 px-3.5 py-2 rounded-full bg-zinc-950/90 border border-yellow-400/80 text-yellow-200 text-xs font-racing-title uppercase tracking-wider shadow-lg hover:bg-yellow-400 hover:text-black transition cursor-pointer">
+    <span>⚙ Réglages Studio</span>
+  </button>
+
+  <!-- MODAL CODE D'INTÉGRATION HTML -->
+  <div id="embed-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/85">
+    <div class="w-full max-w-2xl rounded-2xl bg-zinc-950 border border-yellow-400/60 shadow-2xl p-6">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-amber-500/25">
+        <div>
+          <h3 class="font-racing-title text-sm sm:text-base font-bold text-yellow-300 uppercase tracking-wider">
+            Code d'Intégration HTML — Logo 3D Or &amp; Vitrine Interactive
+          </h3>
+          <p class="text-xs text-amber-100/70 mt-0.5">
+            Copiez-collez ce bloc responsive dans n'importe quelle page web.
+          </p>
+        </div>
+        <button id="btn-close-embed" type="button" class="text-xs px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-200 cursor-pointer">
+          ✕ Fermer
+        </button>
+      </div>
+
+      <textarea id="embed-code-textarea" readonly class="w-full h-56 p-3 rounded-lg bg-black border border-amber-500/30 font-mono text-xs text-amber-200 focus:outline-none"></textarea>
+
+      <div class="flex items-center justify-between mt-4">
+        <span id="copy-feedback" class="text-xs text-emerald-400 font-medium opacity-0 transition">✓ Code copié dans le presse-papiers !</span>
+        <button id="btn-copy-snippet" type="button" class="px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-300 text-black font-bold text-xs uppercase tracking-wider hover:brightness-110 transition cursor-pointer">
+          Copier le Code HTML
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       SMART-TV OPTIMIZED THREE.JS 3D ENGINE (SINGLE-PASS GPU + BRIGHT FRONT LIGHTING)
+       ========================================================================= -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    // -------------------------------------------------------------------------
+    // 1. APPLICATION STATE & SMART TV TURBO DEFAULTS
+    // -------------------------------------------------------------------------
+    const state = {
+      turboMode: true,
+      poseX: 0,
+      poseY: 0,
+      poseZ: 0,
+      floatSpeed: 1.4,
+      floatAmp: 0.20,
+      logoScale: 1.00,
+      ringRadii: [3.55, 4.05, 4.55],
+      ringSpeed: 1.00,
+      bloomStrength: 0.65,
+      frontLightIntensity: 4.2,
+      normalScale: 0.85,
+      backdropMode: 'obsidian',
+      currentSlide: 0,
+      autoplay: true,
+      slideDuration: 7.0,
+      uiAmp: 1.25,
+      choreoPose: { x: 0, y: 0, z: 0 },
+      nitroSpinBoost: 0,
+      musicPlaying: false,
+      musicLoop: true,
+      musicVolume: 75,
+      audioEngine: 'hybrid'
+    };
+
+    // -------------------------------------------------------------------------
+    // 2. STRATEGIC FRENCH CUSTOMER JOURNEY SLIDESHOW DATA (6 ACTS)
+    // -------------------------------------------------------------------------
+    const SIGNAGE_SLIDES = [
+      {
+        sector: 'ACTE 01 // 06',
+        hook: "VOTRE EMPIRE MÉRITE UNE ADRESSE D'EXCEPTION",
+        metric: 'PRESTIGE ABSOLU',
+        choreoPose: { x: 2, y: -8, z: 0 },
+        cards: [
+          { badge: "L'IMAGE QUI IMPOSE", title: 'DOMINEZ VOTRE MARCHÉ', sub: 'UNE ADRESSE QUI SIGNE VOS CONTRATS' },
+          { badge: 'EFFET IMMÉDIAT', title: '100% CLÉ EN MAIN', sub: 'ZÉRO ATTENTE • OPÉRATIONNEL CE JOUR' },
+          { badge: 'BUREAUX EXÉCUTIFS', title: 'LUXE & CALME ABSOLU', sub: 'MOBILIER DE DIRECTION SUR-MESURE' },
+          { badge: 'ACCÈS PRIVILÈGE', title: 'LIBERTÉ 24H/24 • 7J/7', sub: 'CONTRÔLE BIOMÉTRIQUE & SÉCURITÉ VIP' }
+        ]
+      },
+      {
+        sector: 'ACTE 02 // 06',
+        hook: 'LANCEZ VOTRE SOCIÉTÉ SANS PERDRE UNE SECONDE',
+        metric: 'ACTIF EN 24H',
+        choreoPose: { x: -3, y: 10, z: 1 },
+        cards: [
+          { badge: 'DOMICILIATION VIP', title: 'SIÈGE SOCIAL PRESTIGE', sub: 'CRÉDIBILITÉ BANCAIRE & FISCALE MAXIMALE' },
+          { badge: 'ZÉRO PAPERASSE', title: 'CRÉATION FLASH', sub: 'STATUTS, RC & FORMALITÉS CLÉS EN MAIN' },
+          { badge: 'COURRIER INTELLIGENT', title: 'ALERTE INSTANTANÉE', sub: 'SCAN HD & NOTIFICATION EN TEMPS RÉEL' },
+          { badge: 'CONFORMITÉ TOTALE', title: 'GARANTIE LÉGALE 100%', sub: 'DOSSIER AGRÉÉ & ACCOMPAGNEMENT DÉDIÉ' }
+        ]
+      },
+      {
+        sector: 'ACTE 03 // 06',
+        hook: "L'ARÈNE OÙ SE SIGNENT LES CONTRATS DÉCISIFS",
+        metric: 'IMPACT MAXIMAL',
+        choreoPose: { x: 4, y: -11, z: -1 },
+        cards: [
+          { badge: 'BOARDROOMS VIP', title: 'CAPTIVEZ VOS CLIENTS', sub: 'CADRE EXÉCUTIF HAUTE-COUTURE' },
+          { badge: 'SECRET D’AFFAIRES', title: 'ISOLATION STUDIO', sub: 'CONFIDENTIALITÉ ACOUSTIQUE TOTALE' },
+          { badge: 'TECHNOLOGIE 4K', title: 'MUR VIDÉO & VISIO PRO', sub: 'SON SPATIAL & CONNEXION SANS FIL' },
+          { badge: 'SERVICE PALACE', title: 'PAUSE GOURMET VIP', sub: 'CAFÉ GRAND CRU & TRAITEUR EXÉCUTIF' }
+        ]
+      },
+      {
+        sector: 'ACTE 04 // 06',
+        hook: 'ENTREZ DANS LE CERCLE DES LEADERS QUI GAGNent',
+        metric: 'FIBRE 10 GBPS',
+        choreoPose: { x: -2, y: 12, z: -1 },
+        cards: [
+          { badge: 'CLUB DÉCIDEURS', title: 'RÉSEAU HAUTE VALEUR', sub: 'FONDATEURS, INVESTISSEURS & DIRIGEANTS' },
+          { badge: 'ULTRA HAUT DÉBIT', title: 'DOUBLE FIBRE DÉDIÉE', sub: 'WIFI 6E SÉCURISÉ • ZÉRO COUPURE' },
+          { badge: 'ESPACES LOUNGE', title: 'CONFORT PREMIÈRE CLASSE', sub: 'DESIGN ERGONOMIQUE & LUMIÈRE NATURELLE' },
+          { badge: 'SYNERGIES B2B', title: 'OPPORTUNITÉS DIRECTES', sub: 'RENCONTRES PRIVÉES & CROISSANCE RAPIDE' }
+        ]
+      },
+      {
+        sector: 'ACTE 05 // 06',
+        hook: 'VISEZ LA CROISSANCE, NOTRE ÉQUIPE GÈRE LE RESTE',
+        metric: 'ACCUEIL 5 ÉTOILES',
+        choreoPose: { x: 3, y: -7, z: 2 },
+        cards: [
+          { badge: 'PREMIÈRE IMPRESSION', title: 'HÔTESSES TRILINGUES', sub: 'FRANÇAIS • ANGLAIS • ARABE' },
+          { badge: 'LIGNE DÉDIÉE', title: 'SECRÉTARIAT PRO', sub: 'RÉPONSE PERSONNALISÉE AU NOM DE VOTRE MARQUE' },
+          { badge: 'CONCIERGERIE VIP', title: 'ZÉRO CHARGE MENTALE', sub: 'VOYAGES, COURSIERS & LOGISTIQUE EXPRESS' },
+          { badge: 'CONTINUITÉ TOTALE', title: 'SUPPORT IT & CLIM 24/7', sub: 'MAINTENANCE INVISIBLE & CONFORT ABSOLU' }
+        ]
+      },
+      {
+        sector: 'ACTE 06 // 06',
+        hook: "VOTRE NOUVEAU QG VOUS ATTEND DÈS AUJOURD'HUI",
+        metric: 'VISITE PRIVÉE',
+        choreoPose: { x: 0, y: 0, z: 0 },
+        cards: [
+          { badge: 'INSTALLATION EXPRESS', title: 'PRENEZ VOS CLÉS CE JOUR', sub: 'AUCUN TRAVAUX • AUCUN DÉLAI' },
+          { badge: 'AGILITÉ FINANCIÈRE', title: 'FORMULES 100% FLEXIBLES', sub: 'JOUR • MOIS • ANNÉE SANS CONTRAINTE' },
+          { badge: 'EMPLACEMENT ROI', title: 'CŒUR STRATÉGIQUE', sub: 'ACCÈS IMMÉDIAT & PARKING VIP SÉCURISÉ' },
+          { badge: 'PASSEZ À L’ACTION', title: 'RÉSERVEZ VOTRE ESSAI', sub: 'DEMANDEZ VOTRE VISITE VIP À LA RÉCEPTION' }
+        ]
+      }
+    ];
+
+    // -------------------------------------------------------------------------
+    // 3. SCENE, CAMERA & SMART-TV OPTIMIZED RENDERER
+    // -------------------------------------------------------------------------
+    const container = document.getElementById('braven-3d-widget');
+    const fpsBadge = document.getElementById('fps-badge');
+    const getSafeWidth = () => Math.max(container.clientWidth || window.innerWidth || 1280, 320);
+    const getSafeHeight = () => Math.max(container.clientHeight || window.innerHeight || 720, 240);
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(38, getSafeWidth() / getSafeHeight(), 0.1, 120);
+    camera.position.set(0, 0.15, 13.8);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+
+    function getEffectivePixelRatio() {
+      return state.turboMode ? Math.min(window.devicePixelRatio || 1, 1.25) : Math.min(window.devicePixelRatio || 1, 2.0);
+    }
+
+    renderer.setPixelRatio(getEffectivePixelRatio());
+    renderer.setSize(getSafeWidth(), getSafeHeight());
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.48;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    // Optional Post-Processing Composer (Only allocated when user switches out of Turbo mode)
+    let composer = null;
+    let bloomPass = null;
+    function ensureComposer() {
+      if (composer) return;
+      const w = getSafeWidth();
+      const h = getSafeHeight();
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(Math.floor(w * 0.4), Math.floor(h * 0.4)),
+        state.bloomStrength,
+        0.5,
+        0.72
+      );
+      composer.addPass(bloomPass);
+    }
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.maxDistance = 26;
+    controls.minDistance = 5.5;
+    controls.target.set(0, 0, 0);
+
+    // -------------------------------------------------------------------------
+    // 4. BRIGHT FRONT-FACING STUDIO REFLECTIONS & DIRECT FRONT CAMERA LIGHTING
+    // -------------------------------------------------------------------------
+    function buildStudioEnvironment() {
+      const pmremGenerator = new THREE.PMREMGenerator(renderer);
+      pmremGenerator.compileEquirectangularShader();
+
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0x281e0a);
+
+      const addPanel = (w, h, colorHex, intensity, pos, lookAtPos) => {
+        const mat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(colorHex).multiplyScalar(intensity),
+          side: THREE.DoubleSide
+        });
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+        mesh.position.copy(pos);
+        mesh.lookAt(lookAtPos);
+        envScene.add(mesh);
+      };
+
+      const origin = new THREE.Vector3(0, 0, 0);
+      addPanel(36, 20, 0xfff8dc, 5.5, new THREE.Vector3(0, 2, 16), origin);
+      addPanel(24, 14, 0xffdf78, 4.5, new THREE.Vector3(-9, 6, 13), origin);
+      addPanel(24, 14, 0xffdf78, 4.5, new THREE.Vector3(9, -4, 13), origin);
+      addPanel(32, 10, 0xfffdf5, 5.2, new THREE.Vector3(0, 14, 4), origin);
+      addPanel(14, 24, 0xffdd75, 4.0, new THREE.Vector3(-15, 2, 6), origin);
+      addPanel(14, 24, 0xffdd75, 4.0, new THREE.Vector3(15, 2, 6), origin);
+      addPanel(28, 18, 0xd49b2a, 2.2, new THREE.Vector3(0, -14, 2), origin);
+
+      const envTexture = pmremGenerator.fromScene(envScene, 0.035).texture;
+      pmremGenerator.dispose();
+      return envTexture;
+    }
+
+    scene.environment = buildStudioEnvironment();
+
+    const hemiLight = new THREE.HemisphereLight(0xfff5d6, 0x705014, 1.85);
+    scene.add(hemiLight);
+
+    const frontCameraLight = new THREE.DirectionalLight(0xfff8e0, state.frontLightIntensity);
+    frontCameraLight.position.set(0, 1.0, 14.5);
+    scene.add(frontCameraLight);
+
+    const frontGlintLight = new THREE.PointLight(0xfff4c2, 6.5, 28);
+    frontGlintLight.position.set(2.5, 1.5, 6.5);
+    scene.add(frontGlintLight);
+
+    const keyLight = new THREE.DirectionalLight(0xfff4d2, 3.6);
+    keyLight.position.set(6, 8, 10);
+    scene.add(keyLight);
+
+    const rimLightLeft = new THREE.DirectionalLight(0xffdd70, 2.8);
+    rimLightLeft.position.set(-9, 4, 5);
+    scene.add(rimLightLeft);
+
+    const rimLightRight = new THREE.DirectionalLight(0xffe89e, 2.6);
+    rimLightRight.position.set(9, -4, 6);
+    scene.add(rimLightRight);
+
+    const bottomBounceLight = new THREE.DirectionalLight(0xffcf54, 2.0);
+    bottomBounceLight.position.set(0, -9, 7);
+    scene.add(bottomBounceLight);
+
+    function createGoldHaloSprite() {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createRadialGradient(64, 64, 4, 64, 64, 62);
+      grad.addColorStop(0.0, 'rgba(255, 240, 165, 0.65)');
+      grad.addColorStop(0.35, 'rgba(245, 185, 45, 0.25)');
+      grad.addColorStop(0.75, 'rgba(180, 120, 15, 0.06)');
+      grad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+
+      const tex = new THREE.CanvasTexture(c);
+      const mat = new THREE.SpriteMaterial({
+        map: tex,
+        color: 0xffdf70,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        opacity: state.bloomStrength * 0.55
+      });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(11.5, 11.5, 1);
+      sprite.position.set(0, 0, -0.8);
+      return sprite;
+    }
+    const bloomHaloSprite = createGoldHaloSprite();
+    scene.add(bloomHaloSprite);
+
+    // -------------------------------------------------------------------------
+    // 5. FAST 256PX POLIIGON_METALGOLDPAINT_7253 PBR MAPS (BRIGHT 24K GOLD)
+    // -------------------------------------------------------------------------
+    function createPoliigon7253PBRMaps() {
+      const size = 256;
+
+      const baseCanvas = document.createElement('canvas');
+      baseCanvas.width = size;
+      baseCanvas.height = size;
+      const bCtx = baseCanvas.getContext('2d');
+      bCtx.fillStyle = '#F7CA56';
+      bCtx.fillRect(0, 0, size, size);
+
+      const bImg = bCtx.getImageData(0, 0, size, size);
+      const bData = bImg.data;
+      let seed = 7253;
+      const rand = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+
+      for (let i = 0; i < bData.length; i += 4) {
+        const flake = (rand() - 0.5) * 6;
+        bData[i] = Math.min(255, Math.max(0, 248 + flake));
+        bData[i + 1] = Math.min(255, Math.max(0, 204 + flake * 0.85));
+        bData[i + 2] = Math.min(255, Math.max(0, 86 + flake * 0.4));
+        bData[i + 3] = 255;
+      }
+      bCtx.putImageData(bImg, 0, 0);
+
+      const roughCanvas = document.createElement('canvas');
+      roughCanvas.width = size;
+      roughCanvas.height = size;
+      const rCtx = roughCanvas.getContext('2d');
+      rCtx.fillStyle = '#2B2B2B';
+      rCtx.fillRect(0, 0, size, size);
+
+      const normCanvas = document.createElement('canvas');
+      normCanvas.width = size;
+      normCanvas.height = size;
+      const nCtx = normCanvas.getContext('2d');
+      const nImg = nCtx.createImageData(size, size);
+      const nData = nImg.data;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const idx = (y * size + x) * 4;
+          const nx = Math.sin(x * 0.15) * Math.cos(y * 0.15) * 2.2;
+          const ny = Math.cos(x * 0.15) * Math.sin(y * 0.15) * 2.2;
+          nData[idx] = Math.min(255, Math.max(0, 128 + nx));
+          nData[idx + 1] = Math.min(255, Math.max(0, 128 + ny));
+          nData[idx + 2] = 255;
+          nData[idx + 3] = 255;
+        }
+      }
+      nCtx.putImageData(nImg, 0, 0);
+
+      const configureTexture = (canvas, isSRGB) => {
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2, 2);
+        tex.colorSpace = isSRGB ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+        tex.needsUpdate = true;
+        return tex;
+      };
+
+      return {
+        baseColorMap: configureTexture(baseCanvas, true),
+        roughnessMap: configureTexture(roughCanvas, false),
+        normalMap: configureTexture(normCanvas, false)
+      };
+    }
+
+    const pbrMaps = createPoliigon7253PBRMaps();
+
+    const goldPBRMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0xffe074),
+      map: pbrMaps.baseColorMap,
+      roughnessMap: pbrMaps.roughnessMap,
+      normalMap: pbrMaps.normalMap,
+      normalScale: new THREE.Vector2(state.normalScale * 0.12, state.normalScale * 0.12),
+      metalness: 0.94,
+      roughness: 0.18,
+      envMapIntensity: 2.6,
+      emissive: new THREE.Color(0x523905),
+      emissiveIntensity: 0.26
+    });
+
+    const goldBevelMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0xffea96),
+      map: pbrMaps.baseColorMap,
+      metalness: 0.97,
+      roughness: 0.11,
+      envMapIntensity: 3.1,
+      emissive: new THREE.Color(0x5e4206),
+      emissiveIntensity: 0.30
+    });
+
+    const ringAccentMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0xfff3b8),
+      metalness: 0.98,
+      roughness: 0.08,
+      envMapIntensity: 3.3,
+      emissive: new THREE.Color(0x6b4b08),
+      emissiveIntensity: 0.34
+    });
+
+    // -------------------------------------------------------------------------
+    // 6. NORMALIZED UV HELPER & 3D BRAVEN BUSINESS CENTER LOGO GEOMETRY
+    // -------------------------------------------------------------------------
+    function normalizeExtrudeUVs(geometry, scale = 0.25) {
+      const pos = geometry.attributes.position;
+      const norm = geometry.attributes.normal;
+      const uv = geometry.attributes.uv;
+      if (!pos || !uv) return;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const y = pos.getY(i);
+        const z = pos.getZ(i);
+        const nx = norm ? Math.abs(norm.getX(i)) : 0;
+        const ny = norm ? Math.abs(norm.getY(i)) : 0;
+        const nz = norm ? Math.abs(norm.getZ(i)) : 1;
+        if (nz >= nx && nz >= ny) {
+          uv.setXY(i, x * scale, y * scale);
+        } else if (nx >= ny) {
+          uv.setXY(i, z * scale, y * scale);
+        } else {
+          uv.setXY(i, x * scale, z * scale);
+        }
+      }
+      uv.needsUpdate = true;
+    }
+
+    const rootGroup = new THREE.Group();
+    scene.add(rootGroup);
+
+    const logoFloatGroup = new THREE.Group();
+    rootGroup.add(logoFloatGroup);
+
+    const logoPoseGroup = new THREE.Group();
+    logoFloatGroup.add(logoPoseGroup);
+
+    const logoMasterGroup = new THREE.Group();
+    logoPoseGroup.add(logoMasterGroup);
+
+    function createBravenEmblem() {
+      const extrudeSettings = {
+        depth: 0.36,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.032,
+        bevelThickness: 0.032,
+        curveSegments: 8
+      };
+
+      const leftWingShape = new THREE.Shape();
+      leftWingShape.moveTo(-2.75, 0.16);
+      leftWingShape.quadraticCurveTo(-1.75, 0.33, -1.06, 0.44);
+      leftWingShape.lineTo(-1.06, 1.54);
+      leftWingShape.lineTo(-0.68, 1.92);
+      leftWingShape.lineTo(-0.68, 0.32);
+      leftWingShape.quadraticCurveTo(-1.68, 0.24, -2.75, 0.16);
+
+      const leftInnerShape = new THREE.Shape();
+      leftInnerShape.moveTo(-0.50, 0.33);
+      leftInnerShape.lineTo(-0.50, 2.12);
+      leftInnerShape.lineTo(-0.08, 2.58);
+      leftInnerShape.lineTo(-0.08, 0.35);
+      leftInnerShape.closePath();
+
+      const rightInnerShape = new THREE.Shape();
+      rightInnerShape.moveTo(0.08, 0.35);
+      rightInnerShape.lineTo(0.08, 2.58);
+      rightInnerShape.lineTo(0.50, 2.12);
+      rightInnerShape.lineTo(0.50, 0.33);
+      rightInnerShape.closePath();
+
+      const rightWingShape = new THREE.Shape();
+      rightWingShape.moveTo(2.75, 0.16);
+      rightWingShape.quadraticCurveTo(1.75, 0.33, 1.06, 0.44);
+      rightWingShape.lineTo(1.06, 1.54);
+      rightWingShape.lineTo(0.68, 1.92);
+      rightWingShape.lineTo(0.68, 0.32);
+      rightWingShape.quadraticCurveTo(1.68, 0.24, 2.75, 0.16);
+
+      const geo = new THREE.ExtrudeGeometry(
+        [leftWingShape, leftInnerShape, rightInnerShape, rightWingShape],
+        extrudeSettings
+      );
+      geo.translate(0, 0, -extrudeSettings.depth * 0.5);
+      geo.computeVertexNormals();
+      normalizeExtrudeUVs(geo, 0.28);
+
+      return new THREE.Mesh(geo, [goldPBRMaterial, goldBevelMaterial]);
+    }
+
+    function createGlyphShapes(char) {
+      const shapes = [];
+      const addPolygon = (pts) => {
+        const s = new THREE.Shape();
+        s.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) s.lineTo(pts[i][0], pts[i][1]);
+        s.closePath();
+        shapes.push(s);
+        return s;
+      };
+      const makeHole = (pts) => {
+        const p = new THREE.Path();
+        p.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) p.lineTo(pts[i][0], pts[i][1]);
+        p.closePath();
+        return p;
+      };
+
+      switch (char) {
+        case 'B': {
+          const outer = new THREE.Shape();
+          outer.moveTo(0, 0);
+          outer.lineTo(0, 1);
+          outer.lineTo(0.56, 1);
+          outer.quadraticCurveTo(0.82, 1, 0.82, 0.76);
+          outer.quadraticCurveTo(0.82, 0.56, 0.63, 0.52);
+          outer.quadraticCurveTo(0.86, 0.47, 0.86, 0.24);
+          outer.quadraticCurveTo(0.86, 0, 0.58, 0);
+          outer.closePath();
+
+          const topHole = new THREE.Path();
+          topHole.moveTo(0.22, 0.59);
+          topHole.lineTo(0.50, 0.59);
+          topHole.quadraticCurveTo(0.60, 0.59, 0.60, 0.71);
+          topHole.quadraticCurveTo(0.60, 0.82, 0.50, 0.82);
+          topHole.lineTo(0.22, 0.82);
+          topHole.closePath();
+
+          const botHole = new THREE.Path();
+          botHole.moveTo(0.22, 0.18);
+          botHole.lineTo(0.53, 0.18);
+          botHole.quadraticCurveTo(0.64, 0.18, 0.64, 0.30);
+          botHole.quadraticCurveTo(0.64, 0.42, 0.53, 0.42);
+          botHole.lineTo(0.22, 0.42);
+          botHole.closePath();
+
+          outer.holes.push(topHole, botHole);
+          shapes.push(outer);
+          break;
+        }
+        case 'R': {
+          const outer = new THREE.Shape();
+          outer.moveTo(0, 0);
+          outer.lineTo(0, 1);
+          outer.lineTo(0.56, 1);
+          outer.quadraticCurveTo(0.84, 1, 0.84, 0.70);
+          outer.quadraticCurveTo(0.84, 0.46, 0.60, 0.42);
+          outer.lineTo(0.86, 0);
+          outer.lineTo(0.60, 0);
+          outer.lineTo(0.37, 0.39);
+          outer.lineTo(0.22, 0.39);
+          outer.lineTo(0.22, 0);
+          outer.closePath();
+
+          const topHole = new THREE.Path();
+          topHole.moveTo(0.22, 0.57);
+          topHole.lineTo(0.52, 0.57);
+          topHole.quadraticCurveTo(0.62, 0.57, 0.62, 0.70);
+          topHole.quadraticCurveTo(0.62, 0.82, 0.52, 0.82);
+          topHole.lineTo(0.22, 0.82);
+          topHole.closePath();
+
+          outer.holes.push(topHole);
+          shapes.push(outer);
+          break;
+        }
+        case 'A': {
+          const outer = addPolygon([
+            [0, 0], [0.38, 1], [0.58, 1], [0.96, 0],
+            [0.72, 0], [0.64, 0.22], [0.32, 0.22], [0.24, 0]
+          ]);
+          outer.holes.push(makeHole([[0.38, 0.40], [0.58, 0.40], [0.48, 0.72]]));
+          break;
+        }
+        case 'V': {
+          addPolygon([[0, 1], [0.24, 1], [0.46, 0.26], [0.68, 1], [0.92, 1], [0.56, 0], [0.36, 0]]);
+          break;
+        }
+        case 'E': {
+          addPolygon([
+            [0, 0], [0, 1], [0.76, 1], [0.76, 0.81], [0.22, 0.81],
+            [0.22, 0.59], [0.68, 0.59], [0.68, 0.41], [0.22, 0.41],
+            [0.22, 0.19], [0.78, 0.19], [0.78, 0]
+          ]);
+          break;
+        }
+        case 'N': {
+          addPolygon([
+            [0, 0], [0, 1], [0.22, 1], [0.64, 0.34], [0.64, 1],
+            [0.86, 1], [0.86, 0], [0.64, 0], [0.22, 0.66], [0.22, 0]
+          ]);
+          break;
+        }
+        case 'U': {
+          const u = new THREE.Shape();
+          u.moveTo(0, 1);
+          u.lineTo(0.22, 1);
+          u.lineTo(0.22, 0.36);
+          u.quadraticCurveTo(0.22, 0.18, 0.42, 0.18);
+          u.quadraticCurveTo(0.62, 0.18, 0.62, 0.36);
+          u.lineTo(0.62, 1);
+          u.lineTo(0.84, 1);
+          u.lineTo(0.84, 0.34);
+          u.quadraticCurveTo(0.84, 0, 0.42, 0);
+          u.quadraticCurveTo(0, 0, 0, 0.34);
+          u.closePath();
+          shapes.push(u);
+          break;
+        }
+        case 'S': {
+          const s = new THREE.Shape();
+          s.moveTo(0.06, 0.16);
+          s.lineTo(0.24, 0.25);
+          s.quadraticCurveTo(0.42, 0.15, 0.56, 0.22);
+          s.quadraticCurveTo(0.64, 0.29, 0.52, 0.38);
+          s.lineTo(0.26, 0.47);
+          s.quadraticCurveTo(0.04, 0.56, 0.08, 0.76);
+          s.quadraticCurveTo(0.12, 1.0, 0.46, 1.0);
+          s.quadraticCurveTo(0.68, 1.0, 0.80, 0.86);
+          s.lineTo(0.64, 0.72);
+          s.quadraticCurveTo(0.50, 0.82, 0.36, 0.79);
+          s.quadraticCurveTo(0.28, 0.74, 0.36, 0.66);
+          s.lineTo(0.62, 0.56);
+          s.quadraticCurveTo(0.86, 0.47, 0.82, 0.24);
+          s.quadraticCurveTo(0.78, 0, 0.42, 0);
+          s.quadraticCurveTo(0.18, 0, 0.06, 0.16);
+          s.closePath();
+          shapes.push(s);
+          break;
+        }
+        case 'I': {
+          addPolygon([[0.10, 0], [0.10, 1], [0.34, 1], [0.34, 0]]);
+          break;
+        }
+        case 'C': {
+          const c = new THREE.Shape();
+          c.moveTo(0.82, 0.24);
+          c.quadraticCurveTo(0.68, 0, 0.42, 0);
+          c.quadraticCurveTo(0, 0, 0, 0.50);
+          c.quadraticCurveTo(0, 1, 0.42, 1);
+          c.quadraticCurveTo(0.68, 1, 0.82, 0.76);
+          c.lineTo(0.63, 0.66);
+          c.quadraticCurveTo(0.54, 0.81, 0.42, 0.81);
+          c.quadraticCurveTo(0.22, 0.81, 0.22, 0.50);
+          c.quadraticCurveTo(0.22, 0.19, 0.42, 0.19);
+          c.quadraticCurveTo(0.54, 0.19, 0.63, 0.34);
+          c.closePath();
+          shapes.push(c);
+          break;
+        }
+        case 'T': {
+          addPolygon([
+            [0, 1], [0.82, 1], [0.82, 0.80], [0.52, 0.80],
+            [0.52, 0], [0.30, 0], [0.30, 0.80], [0, 0.80]
+          ]);
+          break;
+        }
+      }
+      return shapes;
+    }
+
+    function create3DTextLine(text, { scale = 0.7, depth = 0.28, tracking = 0.22, yOffset = 0 }) {
+      const allShapes = [];
+      const advances = { B: 0.90, R: 0.90, A: 0.98, V: 0.94, E: 0.82, N: 0.90, U: 0.88, S: 0.86, I: 0.46, C: 0.86, T: 0.84, ' ': 0.48 };
+
+      let cursorX = 0;
+      const items = [];
+      for (const ch of text) {
+        const adv = advances[ch] ?? 0.85;
+        items.push({ ch, x: cursorX });
+        cursorX += (adv + tracking) * scale;
+      }
+      const totalWidth = cursorX - tracking * scale;
+      const startX = -totalWidth * 0.5;
+
+      items.forEach(({ ch, x }) => {
+        if (ch === ' ') return;
+        const rawShapes = createGlyphShapes(ch);
+        rawShapes.forEach((s) => {
+          const pts = s.getPoints(6).map((p) => new THREE.Vector2(startX + x + p.x * scale, yOffset + p.y * scale));
+          const transformed = new THREE.Shape(pts);
+          if (s.holes && s.holes.length) {
+            s.holes.forEach((h) => {
+              const hPts = h.getPoints(6).map((p) => new THREE.Vector2(startX + x + p.x * scale, yOffset + p.y * scale));
+              transformed.holes.push(new THREE.Path(hPts));
+            });
+          }
+          allShapes.push(transformed);
+        });
+      });
+
+      const geo = new THREE.ExtrudeGeometry(allShapes, {
+        depth,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: Math.min(0.022 * scale, 0.025),
+        bevelThickness: Math.min(0.022 * scale, 0.025),
+        curveSegments: 6
+      });
+      geo.translate(0, 0, -depth * 0.5);
+      geo.computeVertexNormals();
+      normalizeExtrudeUVs(geo, 0.28);
+
+      return new THREE.Mesh(geo, [goldPBRMaterial, goldBevelMaterial]);
+    }
+
+    logoMasterGroup.add(createBravenEmblem());
+    logoMasterGroup.add(create3DTextLine('BRAVEN', { scale: 0.72, depth: 0.30, tracking: 0.22, yOffset: -0.78 }));
+    logoMasterGroup.add(create3DTextLine('BUSINESS CENTER', { scale: 0.24, depth: 0.16, tracking: 0.34, yOffset: -1.36 }));
+    logoMasterGroup.position.y = 0.26;
+
+    // -------------------------------------------------------------------------
+    // 7. STRICTLY PERPENDICULAR (90° ORTHOGONAL) GOLDEN RINGS
+    // -------------------------------------------------------------------------
+    const ringsRoot = new THREE.Group();
+    rootGroup.add(ringsRoot);
+
+    const ringConfigs = [
+      { tube: 0.042, hasDiamonds: true, basePlaneRot: new THREE.Euler(0, 0, 0) },
+      { tube: 0.034, hasDiamonds: true, basePlaneRot: new THREE.Euler(0, Math.PI / 2, 0) },
+      { tube: 0.028, hasDiamonds: true, basePlaneRot: new THREE.Euler(Math.PI / 2, 0, 0) }
+    ];
+
+    const ringTumblers = [];
+
+    function rebuildRingGeometry(index, radius) {
+      const tumbler = ringTumblers[index];
+      while (tumbler.children.length > 0) {
+        const child = tumbler.children[0];
+        if (child.geometry) child.geometry.dispose();
+        tumbler.remove(child);
+      }
+
+      const cfg = ringConfigs[index];
+      const torusGeo = new THREE.TorusGeometry(radius, cfg.tube, 16, 96);
+      tumbler.add(new THREE.Mesh(torusGeo, goldPBRMaterial));
+
+      const innerLipGeo = new THREE.TorusGeometry(radius - cfg.tube * 1.35, cfg.tube * 0.32, 10, 72);
+      tumbler.add(new THREE.Mesh(innerLipGeo, ringAccentMaterial));
+
+      if (cfg.hasDiamonds) {
+        const diamondGeo = new THREE.OctahedronGeometry(cfg.tube * 2.5, 0);
+        for (let i = 0; i < 4; i++) {
+          const angle = (i * Math.PI) / 2;
+          const node = new THREE.Mesh(diamondGeo, ringAccentMaterial);
+          node.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+          tumbler.add(node);
+        }
+      }
+    }
+
+    ringConfigs.forEach((cfg, idx) => {
+      const mount = new THREE.Group();
+      mount.rotation.copy(cfg.basePlaneRot);
+      ringsRoot.add(mount);
+
+      const tumbler = new THREE.Group();
+      mount.add(tumbler);
+      ringTumblers.push(tumbler);
+
+      rebuildRingGeometry(idx, state.ringRadii[idx]);
+    });
+
+    // -------------------------------------------------------------------------
+    // 8. LIGHTWEIGHT GOLD DUST PARTICLES & 3D BACKDROPS
+    // -------------------------------------------------------------------------
+    function createGoldDust() {
+      const count = 48;
+      const geo = new THREE.BufferGeometry();
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const r = 3.2 + Math.random() * 4.5;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[i * 3 + 2] = r * Math.cos(phi);
+      }
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({
+        color: 0xffe27a,
+        size: 0.065,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      return new THREE.Points(geo, mat);
+    }
+    const goldParticles = createGoldDust();
+    scene.add(goldParticles);
+
+    function createBackdropTextures() {
+      const makeRadialTex = (innerHex, midHex, outerHex) => {
+        const c = document.createElement('canvas');
+        c.width = 256;
+        c.height = 256;
+        const ctx = c.getContext('2d');
+        const g = ctx.createRadialGradient(128, 115, 16, 128, 128, 145);
+        g.addColorStop(0, innerHex);
+        g.addColorStop(0.55, midHex);
+        g.addColorStop(1, outerHex);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 256, 256);
+        const tex = new THREE.CanvasTexture(c);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      };
+
+      const makeGridTex = () => {
+        const c = document.createElement('canvas');
+        c.width = 256;
+        c.height = 256;
+        const ctx = c.getContext('2d');
+        const g = ctx.createRadialGradient(128, 128, 16, 128, 128, 145);
+        g.addColorStop(0, '#211809');
+        g.addColorStop(0.65, '#0c0905');
+        g.addColorStop(1, '#040302');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.strokeStyle = 'rgba(242, 188, 63, 0.22)';
+        ctx.lineWidth = 1;
+        const step = 32;
+        for (let i = 0; i <= 256; i += step) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, 256);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(0, i);
+          ctx.lineTo(256, i);
+          ctx.stroke();
+        }
+        const tex = new THREE.CanvasTexture(c);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      };
+
+      return {
+        obsidian: makeRadialTex('#241a0b', '#0d0905', '#040302'),
+        marble: makeRadialTex('#ffffff', '#f2ede2', '#d8d0be'),
+        grid: makeGridTex()
+      };
+    }
+
+    const backdropTextures = createBackdropTextures();
+
+    const studioGrid3DGroup = new THREE.Group();
+    const floorGrid = new THREE.GridHelper(32, 32, 0xf2bc3f, 0x6b4c12);
+    floorGrid.position.y = -4.2;
+    floorGrid.material.transparent = true;
+    floorGrid.material.opacity = 0.45;
+    studioGrid3DGroup.add(floorGrid);
+    studioGrid3DGroup.visible = false;
+    scene.add(studioGrid3DGroup);
+
+    function applyBackdropMode(mode) {
+      state.backdropMode = mode;
+      document.body.classList.remove('bg-luxury', 'bg-white-studio', 'bg-grid', 'bg-transparent-grid');
+      studioGrid3DGroup.visible = false;
+
+      const labelEl = document.getElementById('val-backdrop-mode');
+
+      if (mode === 'obsidian') {
+        document.body.classList.add('bg-luxury');
+        scene.background = backdropTextures.obsidian;
+        renderer.toneMappingExposure = 1.48;
+        if (labelEl) labelEl.textContent = 'Obsidienne';
+      } else if (mode === 'marble') {
+        document.body.classList.add('bg-white-studio');
+        scene.background = backdropTextures.marble;
+        renderer.toneMappingExposure = 1.15;
+        if (labelEl) labelEl.textContent = 'Marbre Blanc';
+      } else if (mode === 'grid') {
+        document.body.classList.add('bg-grid');
+        scene.background = backdropTextures.grid;
+        studioGrid3DGroup.visible = true;
+        renderer.toneMappingExposure = 1.45;
+        if (labelEl) labelEl.textContent = 'Grille Or 3D';
+      } else if (mode === 'alpha') {
+        document.body.classList.add('bg-transparent-grid');
+        scene.background = null;
+        renderer.setClearColor(0x000000, 0);
+        renderer.toneMappingExposure = 1.48;
+        if (labelEl) labelEl.textContent = 'Alpha Transparent';
+      }
+    }
+
+    applyBackdropMode('obsidian');
+
+    // -------------------------------------------------------------------------
+    // 9. FRENCH SMART SIGNAGE SLIDESHOW CONTROLLER
+    // -------------------------------------------------------------------------
+    const domTopSector = document.getElementById('signage-top-sector');
+    const domHookPill = document.getElementById('signage-hook-pill');
+    const domHookText = document.getElementById('signage-hook-text');
+    const domMetricPill = document.getElementById('signage-metric-pill');
+    const domMetricText = document.getElementById('signage-metric-text');
+    const domCounterReadout = document.getElementById('slide-counter-readout');
+    const domProgressBar = document.getElementById('autoplay-progress-bar');
+    const domDotsRow = document.getElementById('slide-dots-row');
+    const domSpeedSlashBar = document.getElementById('speed-slash-bar');
+
+    const cardEls = [0, 1, 2, 3].map((i) => ({
+      panel: document.getElementById(`sym-card-${i}`),
+      badge: document.getElementById(`card-badge-${i}`),
+      title: document.getElementById(`card-title-${i}`),
+      sub: document.getElementById(`card-sub-${i}`),
+      side: i < 2 ? 'left' : 'right'
+    }));
+
+    function renderSlideDots() {
+      domDotsRow.innerHTML = '';
+      SIGNAGE_SLIDES.forEach((_, idx) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        const isActive = idx === state.currentSlide;
+        dot.className = `h-1.5 transition-all cursor-pointer ${
+          isActive ? 'w-7 bg-yellow-300' : 'w-2.5 bg-yellow-400/35 hover:bg-yellow-300/75'
+        }`;
+        dot.addEventListener('click', () => goToSlide(idx));
+        domDotsRow.appendChild(dot);
+      });
+    }
+
+    function triggerSpeedSlash() {
+      domSpeedSlashBar.classList.remove('speed-slash-active');
+      void domSpeedSlashBar.offsetWidth;
+      domSpeedSlashBar.classList.add('speed-slash-active');
+    }
+
+    let slideTransitionTimeout = null;
+    let slideTimerElapsed = 0;
+
+    function goToSlide(targetIdx) {
+      const nextIdx = (targetIdx + SIGNAGE_SLIDES.length) % SIGNAGE_SLIDES.length;
+      state.currentSlide = nextIdx;
+      slideTimerElapsed = 0;
+      domProgressBar.style.width = '0%';
+
+      state.nitroSpinBoost = 2.8;
+      triggerSpeedSlash();
+
+      cardEls.forEach((c) => {
+        c.panel.classList.remove('cascade-in-left', 'cascade-in-right');
+        c.panel.classList.add(c.side === 'left' ? 'cascade-out-left' : 'cascade-out-right');
+      });
+
+      if (slideTransitionTimeout) clearTimeout(slideTransitionTimeout);
+
+      slideTransitionTimeout = setTimeout(() => {
+        const slide = SIGNAGE_SLIDES[state.currentSlide];
+        domTopSector.textContent = slide.sector;
+        if (domHookText && slide.hook) domHookText.textContent = slide.hook;
+        domMetricText.textContent = slide.metric;
+        domCounterReadout.textContent = `0${state.currentSlide + 1} / 0${SIGNAGE_SLIDES.length}`;
+        state.choreoPose = { ...slide.choreoPose };
+
+        cardEls.forEach((c, i) => {
+          const data = slide.cards[i];
+          c.badge.textContent = data.badge;
+          c.title.textContent = data.title;
+          c.sub.textContent = data.sub;
+
+          c.panel.classList.remove('cascade-out-left', 'cascade-out-right');
+          void c.panel.offsetWidth;
+          c.panel.classList.add(c.side === 'left' ? 'cascade-in-left' : 'cascade-in-right');
+        });
+
+        renderSlideDots();
+      }, 160);
+    }
+
+    renderSlideDots();
+    state.choreoPose = { ...SIGNAGE_SLIDES[0].choreoPose };
+
+    cardEls.forEach((c) => {
+      c.panel.addEventListener('pointermove', (e) => {
+        const rect = c.panel.getBoundingClientRect();
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;
+        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        const amp = state.uiAmp;
+        const skewDeg = -7 * amp;
+        const shiftX = (c.side === 'left' ? 10 : -10) * amp;
+        const rotX = -ny * 8 * amp;
+        const rotY = nx * 10 * amp;
+        c.panel.style.transform = `perspective(800px) skewX(${skewDeg}deg) translate3d(${shiftX}px, 0, 0) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${1 + 0.025 * amp})`;
+      });
+      c.panel.addEventListener('pointerleave', () => {
+        c.panel.style.transform = '';
+      });
+      c.panel.addEventListener('click', () => goToSlide(state.currentSlide + 1));
+    });
+
+    if (domMetricPill) domMetricPill.addEventListener('click', () => goToSlide(state.currentSlide + 1));
+    if (domHookPill) domHookPill.addEventListener('click', () => goToSlide(state.currentSlide + 1));
+
+    document.getElementById('btn-prev-slide').addEventListener('click', () => goToSlide(state.currentSlide - 1));
+    document.getElementById('btn-next-slide').addEventListener('click', () => goToSlide(state.currentSlide + 1));
+
+    const btnToggleAutoplay = document.getElementById('btn-toggle-autoplay');
+    const autoplayDot = document.getElementById('autoplay-dot');
+    const autoplayLabel = document.getElementById('autoplay-label');
+
+    btnToggleAutoplay.addEventListener('click', () => {
+      state.autoplay = !state.autoplay;
+      autoplayLabel.textContent = state.autoplay ? 'AUTO : ACTIF' : 'AUTO : PAUSE';
+      autoplayDot.className = state.autoplay ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-amber-500';
+    });
+
+    // -------------------------------------------------------------------------
+    // 10. DUAL-ENGINE LOOPING AUDIO PLAYER (YOUTUBE ffCAdXPO0K0 + AFROBEAT SYNTH)
+    // -------------------------------------------------------------------------
+    const YOUTUBE_VIDEO_ID = 'ffCAdXPO0K0';
+    let ytPlayer = null;
+    let ytReady = false;
+    let ytPlayingConfirmed = false;
+
+    const statusBadge = document.getElementById('music-status-badge');
+    const eqBars = document.querySelectorAll('#music-eq-bars .eq-bar');
+    const btnMusicPlay = document.getElementById('btn-music-play');
+    const btnMusicStop = document.getElementById('btn-music-stop');
+    const btnMusicLoop = document.getElementById('btn-music-loop');
+    const sliderMusicVol = document.getElementById('slider-music-vol');
+    const valMusicVol = document.getElementById('val-music-vol');
+    const selectAudioEngine = document.getElementById('select-audio-engine');
+
+    class AfrobeatLuxurySynth {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.isPlaying = false;
+        this.step = 0;
+        this.timerId = null;
+        this.bpm = 106;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.value = (state.musicVolume / 100) * 0.42;
+          this.masterGain.connect(this.ctx.destination);
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      }
+
+      setVolume(volPct) {
+        if (this.masterGain && this.ctx) {
+          this.masterGain.gain.setTargetAtTime((volPct / 100) * 0.42, this.ctx.currentTime, 0.05);
+        }
+      }
+
+      playLogDrum(freq, dur) {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq * 1.65, now);
+        osc.frequency.exponentialRampToValueAtTime(freq, now + 0.055);
+        gain.gain.setValueAtTime(0.65, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + dur);
+      }
+
+      playShaker(accent = false) {
+        const now = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 0.04;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 7500;
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(accent ? 0.16 : 0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.038);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+        noise.start(now);
+      }
+
+      playWarmChord(freqs, dur) {
+        const now = this.ctx.currentTime;
+        freqs.forEach((f) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.08, now + 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + dur);
+        });
+      }
+
+      playPluck(freq) {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+
+      tick() {
+        if (!this.isPlaying || !this.ctx) return;
+        const s = this.step % 16;
+        this.playShaker(s % 4 === 2);
+
+        const bassPattern = { 0: 65.41, 3: 65.41, 6: 73.42, 8: 87.31, 11: 98.0, 14: 87.31 };
+        if (bassPattern[s]) this.playLogDrum(bassPattern[s], 0.32);
+
+        if (s === 0) this.playWarmChord([261.63, 329.63, 392.0, 493.88], 1.4);
+        if (s === 8) this.playWarmChord([220.0, 261.63, 329.63, 392.0], 1.4);
+
+        const pluckNotes = { 2: 523.25, 5: 659.25, 7: 587.33, 10: 783.99, 13: 659.25, 15: 587.33 };
+        if (pluckNotes[s]) this.playPluck(pluckNotes[s]);
+
+        this.step++;
+        if (!state.musicLoop && this.step >= 64) {
+          stopMusicAll();
+        }
+      }
+
+      start() {
+        this.init();
+        if (this.isPlaying) return;
+        this.isPlaying = true;
+        const stepMs = (60 / this.bpm / 4) * 1000;
+        this.timerId = setInterval(() => this.tick(), stepMs);
+      }
+
+      stop() {
+        this.isPlaying = false;
+        if (this.timerId) {
+          clearInterval(this.timerId);
+          this.timerId = null;
+        }
+      }
+    }
+
+    const afrobeatSynth = new AfrobeatLuxurySynth();
+
+    function updateMusicUI(playing, labelText) {
+      state.musicPlaying = playing;
+      if (statusBadge) {
+        statusBadge.textContent = labelText || (playing ? 'EN LECTURE' : 'ARRÊTÉ');
+        statusBadge.className = playing
+          ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+          : 'text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-amber-200/70 border border-amber-500/30';
+      }
+      eqBars.forEach((bar) => {
+        if (playing) bar.classList.add('eq-bar-active');
+        else bar.classList.remove('eq-bar-active');
+      });
+    }
+
+    function startMusicAll() {
+      const mode = state.audioEngine;
+      if (mode === 'synth') {
+        if (ytReady && ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+        afrobeatSynth.start();
+        updateMusicUI(true, 'SYNTHÉ • BOUCLE');
+        return;
+      }
+      if (mode === 'youtube') {
+        afrobeatSynth.stop();
+        if (ytReady && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+          ytPlayer.unMute();
+          ytPlayer.setVolume(state.musicVolume);
+          ytPlayer.playVideo();
+          updateMusicUI(true, 'FLUX YT • ACTIF');
+        } else {
+          updateMusicUI(false, 'CHARGEMENT YT...');
+        }
+        return;
+      }
+      if (ytReady && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+        try {
+          ytPlayer.unMute();
+          ytPlayer.setVolume(state.musicVolume);
+          ytPlayer.playVideo();
+        } catch (err) {}
+      }
+      if (!ytPlayingConfirmed) {
+        afrobeatSynth.start();
+        updateMusicUI(true, 'AFROBEAT • ACTIF');
+      } else {
+        afrobeatSynth.stop();
+        updateMusicUI(true, 'FLUX YT • BOUCLE');
+      }
+    }
+
+    function stopMusicAll() {
+      afrobeatSynth.stop();
+      ytPlayingConfirmed = false;
+      if (ytReady && ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+        try { ytPlayer.stopVideo(); } catch (e) {}
+      }
+      updateMusicUI(false, 'ARRÊTÉ');
+    }
+
+    window.onYouTubeIframeAPIReady = function () {
+      ytPlayer = new window.YT.Player('yt-audio-player', {
+        height: '40',
+        width: '96',
+        videoId: YOUTUBE_VIDEO_ID,
+        playerVars: {
+          autoplay: 1,
+          loop: 1,
+          playlist: YOUTUBE_VIDEO_ID,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0
+        },
+        events: {
+          onReady: (event) => {
+            ytReady = true;
+            event.target.setVolume(state.musicVolume);
+            if (state.audioEngine !== 'synth') {
+              event.target.playVideo();
+            }
+          },
+          onStateChange: (event) => {
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              ytPlayingConfirmed = true;
+              if (state.audioEngine === 'hybrid') afrobeatSynth.stop();
+              updateMusicUI(true, 'YT ACTIF • BOUCLE');
+            } else if (event.data === window.YT.PlayerState.ENDED) {
+              if (state.musicLoop) {
+                event.target.seekTo(0);
+                event.target.playVideo();
+              } else {
+                updateMusicUI(false, 'TERMINÉ');
+              }
+            }
+          },
+          onError: () => {
+            ytPlayingConfirmed = false;
+            if (state.audioEngine !== 'youtube' && state.musicPlaying) {
+              afrobeatSynth.start();
+              updateMusicUI(true, 'SYNTHÉ SECOURS');
+            }
+          }
+        }
+      });
+    };
+
+    const ytScript = document.createElement('script');
+    ytScript.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(ytScript);
+
+    let firstInteractionUnlocked = false;
+    const unlockAudioOnFirstGesture = () => {
+      if (firstInteractionUnlocked) return;
+      firstInteractionUnlocked = true;
+      if (!state.musicPlaying) startMusicAll();
+      window.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
+      window.removeEventListener('keydown', unlockAudioOnFirstGesture);
+    };
+    window.addEventListener('pointerdown', unlockAudioOnFirstGesture);
+    window.addEventListener('keydown', unlockAudioOnFirstGesture);
+
+    btnMusicPlay.addEventListener('click', () => {
+      firstInteractionUnlocked = true;
+      startMusicAll();
+    });
+    btnMusicStop.addEventListener('click', () => {
+      firstInteractionUnlocked = true;
+      stopMusicAll();
+    });
+    btnMusicLoop.addEventListener('click', () => {
+      state.musicLoop = !state.musicLoop;
+      btnMusicLoop.textContent = state.musicLoop ? '🔁 Boucle : OUI' : '🔁 Boucle : NON';
+    });
+    sliderMusicVol.addEventListener('input', (e) => {
+      state.musicVolume = parseInt(e.target.value, 10);
+      valMusicVol.textContent = `${state.musicVolume}%`;
+      afrobeatSynth.setVolume(state.musicVolume);
+      if (ytReady && ytPlayer && typeof ytPlayer.setVolume === 'function') {
+        ytPlayer.setVolume(state.musicVolume);
+      }
+    });
+    selectAudioEngine.addEventListener('change', (e) => {
+      state.audioEngine = e.target.value;
+      if (state.musicPlaying) startMusicAll();
+    });
+
+    // -------------------------------------------------------------------------
+    // 11. COLLAPSIBLE STUDIO CONTROLS & VIEW MODES (COLLAPSED BY DEFAULT)
+    // -------------------------------------------------------------------------
+    const studioDrawer = document.getElementById('studio-sliders-drawer');
+    const btnToggleStudio = document.getElementById('btn-toggle-studio');
+    const btnCloseStudio = document.getElementById('btn-close-studio');
+    const btnToggleSignage = document.getElementById('btn-toggle-signage');
+    const btnKioskMode = document.getElementById('btn-kiosk-mode');
+    const btnZenMode = document.getElementById('btn-zen-mode');
+    const btnRestoreUi = document.getElementById('btn-restore-ui');
+    const btnPerfMode = document.getElementById('btn-perf-mode');
+    const signageHud = document.getElementById('smart-signage-hud');
+
+    let studioDrawerOpen = false;
+    let signageVisible = true;
+
+    function setStudioDrawer(open) {
+      studioDrawerOpen = open;
+      if (open) {
+        document.body.classList.remove('kiosk-mode', 'zen-mode');
+        studioDrawer.classList.remove('translate-x-[430px]', 'opacity-0', 'pointer-events-none');
+      } else {
+        studioDrawer.classList.add('translate-x-[430px]', 'opacity-0', 'pointer-events-none');
+      }
+    }
+
+    btnToggleStudio.addEventListener('click', () => setStudioDrawer(!studioDrawerOpen));
+    btnCloseStudio.addEventListener('click', () => setStudioDrawer(false));
+
+    btnRestoreUi.addEventListener('click', () => {
+      if (document.body.classList.contains('kiosk-mode') || document.body.classList.contains('zen-mode')) {
+        document.body.classList.remove('kiosk-mode', 'zen-mode');
+        setStudioDrawer(true);
+        btnRestoreUi.innerHTML = '<span>📺 Mode Kiosque TV</span>';
+      } else {
+        setStudioDrawer(false);
+        document.body.classList.add('kiosk-mode');
+        btnRestoreUi.innerHTML = '<span>⚙ Réglages Studio</span>';
+      }
+    });
+
+    btnPerfMode.addEventListener('click', () => {
+      state.turboMode = !state.turboMode;
+      if (!state.turboMode) ensureComposer();
+      handleResize();
+      btnPerfMode.textContent = state.turboMode ? 'TURBO : OUI' : 'POST-FX : OUI';
+      btnPerfMode.className = state.turboMode
+        ? 'px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-400 text-black cursor-pointer'
+        : 'px-2.5 py-1 rounded text-[11px] font-bold bg-amber-400 text-black cursor-pointer';
+    });
+
+    btnToggleSignage.addEventListener('click', () => {
+      signageVisible = !signageVisible;
+      signageHud.style.opacity = signageVisible ? '1' : '0';
+      signageHud.style.pointerEvents = signageVisible ? 'none' : 'none';
+      signageHud.querySelectorAll('.pointer-events-auto').forEach((el) => {
+        el.style.pointerEvents = signageVisible ? 'auto' : 'none';
+      });
+      btnToggleSignage.textContent = signageVisible ? 'Panneaux : OUI' : 'Panneaux : NON';
+    });
+
+    btnKioskMode.addEventListener('click', () => {
+      setStudioDrawer(false);
+      document.body.classList.remove('zen-mode');
+      document.body.classList.add('kiosk-mode');
+      btnRestoreUi.innerHTML = '<span>⚙ Réglages Studio</span>';
+    });
+
+    function toggleZenMode() {
+      setStudioDrawer(false);
+      document.body.classList.remove('kiosk-mode');
+      document.body.classList.toggle('zen-mode');
+      btnRestoreUi.innerHTML = '<span>⚙ Réglages Studio</span>';
+    }
+
+    btnZenMode.addEventListener('click', toggleZenMode);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'h' || e.key === 'H') toggleZenMode();
+      if (e.key === 'ArrowRight') goToSlide(state.currentSlide + 1);
+      if (e.key === 'ArrowLeft') goToSlide(state.currentSlide - 1);
+    });
+
+    const bindSlider = (id, valId, formatter, onChange) => {
+      const el = document.getElementById(id);
+      const valEl = document.getElementById(valId);
+      if (!el) return;
+      el.addEventListener('input', (e) => {
+        const v = parseFloat(e.target.value);
+        if (valEl) valEl.textContent = formatter(v);
+        onChange(v);
+      });
+    };
+
+    bindSlider('slider-slide-speed', 'val-slide-speed', (v) => `${v.toFixed(1)}s`, (v) => {
+      state.slideDuration = v;
+      slideTimerElapsed = 0;
+    });
+    bindSlider('slider-ui-amp', 'val-ui-amp', (v) => `${v.toFixed(2)}x`, (v) => {
+      state.uiAmp = v;
+      document.documentElement.style.setProperty('--ui-amp', v.toFixed(2));
+    });
+    document.getElementById('btn-test-transition').addEventListener('click', () => goToSlide(state.currentSlide + 1));
+
+    bindSlider('slider-pose-x', 'val-pose-x', (v) => `${v}°`, (v) => { state.poseX = v; });
+    bindSlider('slider-pose-y', 'val-pose-y', (v) => `${v}°`, (v) => { state.poseY = v; });
+    bindSlider('slider-pose-z', 'val-pose-z', (v) => `${v}°`, (v) => { state.poseZ = v; });
+
+    document.getElementById('btn-reset-pose').addEventListener('click', () => {
+      state.poseX = 0; state.poseY = 0; state.poseZ = 0;
+      ['x', 'y', 'z'].forEach((axis) => {
+        document.getElementById(`slider-pose-${axis}`).value = 0;
+        document.getElementById(`val-pose-${axis}`).textContent = '0°';
+      });
+    });
+
+    bindSlider('slider-float-speed', 'val-float-speed', (v) => `${v.toFixed(1)}x`, (v) => { state.floatSpeed = v; });
+    bindSlider('slider-float-amp', 'val-float-amp', (v) => v.toFixed(2), (v) => { state.floatAmp = v; });
+    bindSlider('slider-logo-scale', 'val-logo-scale', (v) => `${v.toFixed(2)}x`, (v) => {
+      state.logoScale = v;
+      logoMasterGroup.scale.setScalar(v);
+    });
+
+    bindSlider('slider-ring1-rad', 'val-ring1-rad', (v) => v.toFixed(2), (v) => {
+      state.ringRadii[0] = v;
+      rebuildRingGeometry(0, v);
+    });
+    bindSlider('slider-ring2-rad', 'val-ring2-rad', (v) => v.toFixed(2), (v) => {
+      state.ringRadii[1] = v;
+      rebuildRingGeometry(1, v);
+    });
+    bindSlider('slider-ring3-rad', 'val-ring3-rad', (v) => v.toFixed(2), (v) => {
+      state.ringRadii[2] = v;
+      rebuildRingGeometry(2, v);
+    });
+    bindSlider('slider-ring-speed', 'val-ring-speed', (v) => `${v.toFixed(2)}x`, (v) => { state.ringSpeed = v; });
+
+    bindSlider('slider-bloom-strength', 'val-bloom-strength', (v) => v.toFixed(2), (v) => {
+      state.bloomStrength = v;
+      bloomHaloSprite.material.opacity = v * 0.55;
+      if (bloomPass) bloomPass.strength = v;
+    });
+
+    bindSlider('slider-front-light', 'val-front-light', (v) => v.toFixed(1), (v) => {
+      state.frontLightIntensity = v;
+      frontCameraLight.intensity = v;
+    });
+
+    bindSlider('slider-normal-scale', 'val-normal-scale', (v) => v.toFixed(2), (v) => {
+      state.normalScale = v;
+      goldPBRMaterial.normalScale.set(v * 0.12, v * 0.12);
+    });
+
+    const themeBtns = document.querySelectorAll('.bg-theme-btn');
+    themeBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const bg = btn.getAttribute('data-bg');
+        themeBtns.forEach((b) => {
+          b.className = 'bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-zinc-800 border border-zinc-700 text-amber-100 hover:border-yellow-400/50 cursor-pointer';
+        });
+        btn.className = 'bg-theme-btn px-2 py-1.5 rounded text-[11px] font-semibold bg-amber-500/35 border border-yellow-400 text-yellow-100 cursor-pointer';
+        applyBackdropMode(bg);
+      });
+    });
+
+    const embedModal = document.getElementById('embed-modal');
+    const embedTextarea = document.getElementById('embed-code-textarea');
+    const copyFeedback = document.getElementById('copy-feedback');
+
+    document.getElementById('btn-open-embed').addEventListener('click', () => {
+      embedTextarea.value = `<!-- Braven Business Center 3D Or 24K & Affichage Dynamique -->\n<div style="position:relative;width:100%;height:720px;border-radius:16px;overflow:hidden;background:#090704;">\n  <iframe src="${window.location.href}" style="width:100%;height:100%;border:0;" allow="autoplay; fullscreen" loading="lazy"></iframe>\n</div>`;
+      embedModal.classList.remove('hidden');
+      embedModal.classList.add('flex');
+    });
+
+    document.getElementById('btn-close-embed').addEventListener('click', () => {
+      embedModal.classList.add('hidden');
+      embedModal.classList.remove('flex');
+    });
+
+    document.getElementById('btn-copy-snippet').addEventListener('click', () => {
+      embedTextarea.select();
+      document.execCommand('copy');
+      copyFeedback.style.opacity = '1';
+      setTimeout(() => { copyFeedback.style.opacity = '0'; }, 2400);
+    });
+
+    // -------------------------------------------------------------------------
+    // 12. DESKTOP-LOCKED RESIZE & HIGH-EFFICIENCY 30-60FPS ANIMATION LOOP
+    // -------------------------------------------------------------------------
+    function handleResize() {
+      const w = getSafeWidth();
+      const h = getSafeHeight();
+      const pr = getEffectivePixelRatio();
+      camera.aspect = w / h;
+      camera.fov = 38;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(pr);
+      renderer.setSize(w, h);
+      if (composer) {
+        composer.setSize(w, h);
+        if (bloomPass) bloomPass.resolution.set(Math.floor(w * 0.4), Math.floor(h * 0.4));
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    const clock = new THREE.Clock();
+    const degToRad = THREE.MathUtils.degToRad;
+    let frameCount = 0;
+    let fpsAccum = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.getElapsedTime();
+
+      // Lightweight FPS Monitor
+      frameCount++;
+      fpsAccum += dt;
+      if (fpsAccum >= 1.0) {
+        const fps = Math.round(frameCount / fpsAccum);
+        if (fpsBadge) fpsBadge.textContent = `${state.turboMode ? 'TV TURBO' : 'POST-FX'} • ${fps} FPS`;
+        frameCount = 0;
+        fpsAccum = 0;
+      }
+
+      // 1. Autoplay Slide Timer
+      if (state.autoplay && signageVisible && !document.body.classList.contains('zen-mode')) {
+        slideTimerElapsed += dt;
+        const pct = Math.min((slideTimerElapsed / state.slideDuration) * 100, 100);
+        domProgressBar.style.width = `${pct}%`;
+
+        if (slideTimerElapsed >= state.slideDuration) {
+          goToSlide(state.currentSlide + 1);
+        }
+      }
+
+      // 2. Smoothly decay Nitrous Transition Spin Boost
+      state.nitroSpinBoost = THREE.MathUtils.lerp(state.nitroSpinBoost, 0, dt * 3.5);
+      const effectiveRingSpeed = state.ringSpeed + state.nitroSpinBoost * state.uiAmp;
+
+      // 3. Rotate ALL 3 Strictly Perpendicular (90° Orthogonal) Golden Rings
+      ringTumblers[0].rotation.x += dt * 0.50 * effectiveRingSpeed;
+      ringTumblers[0].rotation.y += dt * 0.14 * effectiveRingSpeed;
+
+      ringTumblers[1].rotation.y += dt * 0.44 * effectiveRingSpeed;
+      ringTumblers[1].rotation.x += dt * 0.12 * effectiveRingSpeed;
+
+      ringTumblers[2].rotation.x += dt * 0.38 * effectiveRingSpeed;
+      ringTumblers[2].rotation.y += dt * 0.16 * effectiveRingSpeed;
+
+      // 4. Continuous Floating Levitation Animation on the 3D Logo
+      const floatY = Math.sin(elapsed * state.floatSpeed) * state.floatAmp;
+      const breathTiltX = Math.cos(elapsed * state.floatSpeed * 0.7) * 0.03;
+      const breathTiltZ = Math.sin(elapsed * state.floatSpeed * 0.5) * 0.02;
+      logoFloatGroup.position.y = floatY;
+
+      const targetRotX = degToRad(state.poseX + (signageVisible ? state.choreoPose.x * 0.35 : 0)) + breathTiltX;
+      const targetRotY = degToRad(state.poseY + (signageVisible ? state.choreoPose.y * 0.35 : 0));
+      const targetRotZ = degToRad(state.poseZ + (signageVisible ? state.choreoPose.z * 0.35 : 0)) + breathTiltZ;
+
+      logoPoseGroup.rotation.x = THREE.MathUtils.lerp(logoPoseGroup.rotation.x, targetRotX, dt * 4.5);
+      logoPoseGroup.rotation.y = THREE.MathUtils.lerp(logoPoseGroup.rotation.y, targetRotY, dt * 4.5);
+      logoPoseGroup.rotation.z = THREE.MathUtils.lerp(logoPoseGroup.rotation.z, targetRotZ, dt * 4.5);
+
+      // 5. Orbit Front Glint Light in front of the logo (+Z hemisphere) so front faces always gleam
+      frontGlintLight.position.set(
+        Math.sin(elapsed * 0.9) * 4.5,
+        Math.cos(elapsed * 1.1) * 2.5 + 0.5,
+        5.5 + Math.sin(elapsed * 0.7) * 1.5
+      );
+
+      // 6. Drift ambient gold dust particles
+      goldParticles.rotation.y = elapsed * 0.035;
+
+      controls.update();
+
+      // Single-pass direct GPU render in Smart TV Turbo Mode (or Alpha mode)
+      if (state.turboMode || state.backdropMode === 'alpha' || !composer) {
+        renderer.render(scene, camera);
+      } else {
+        composer.render();
+      }
+    }
+
+    animate();
+  </script>
+</body>
+</html>
