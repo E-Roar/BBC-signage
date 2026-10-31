@@ -1,0 +1,27 @@
+{
+  "type": "PLANAR",
+  "properties": {
+    "top": 0,
+    "left": 0,
+    "width": 1024,
+    "height": 1024,
+    "isRotated": false,
+    "originalWidth": 1024,
+    "originalHeight": 1024
+  },
+  "imagePath": "image-targets/braven-marker_luminance.png",
+  "metadata": {
+    "name": "BRAVEN Business Center Tracking Target",
+    "ratio": 1,
+    "physicalWidthInMeters": 0.2
+  },
+  "name": "braven-marker",
+  "resources": {
+    "originalImage": "braven-marker_original.png",
+    "croppedImage": "braven-marker_cropped.png",
+    "thumbnailImage": "braven-marker_thumbnail.png",
+    "luminanceImage": "braven-marker_luminance.png"
+  },
+  "created": 1793468037642,
+  "updated": 1793468037642
+}

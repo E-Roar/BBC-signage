@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <title>BRAVEN Business Center — 8th Wall AR World Canvas Signage</title>
+  <meta name="description" content="3D Metallic Gold PBR Logo & World Canvas Smart Signage with 8th Wall Image Tracking AR" />
+  <meta name="theme-color" content="#E5B84B" />
+
+  <!-- Apple iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BRAVEN AR" />
+  <link rel="apple-touch-icon" href="/braven-marker.png" />
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <!-- Google Fonts: Inter, Orbitron, Chakra Petch, Rajdhani -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'racing-title': ['Orbitron', 'Chakra Petch', 'sans-serif'],
+            'racing-hud': ['Chakra Petch', 'Rajdhani', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 8th Wall XR Engine — Synchronous preload of SLAM / Image Tracking chunk -->
+  <script src="/ar/xr/xr.js" data-preload-chunks="slam: /ar/xr/xr-tracking.js"></script>
+</head>
+<body class="bg-black text-white m-0 p-0 overflow-hidden select-none">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,623 @@
+{
+  "objects": {
+    "a608ddd9-9379-464d-966f-5d8d8674c83c": {
+      "camera": {
+        "type": "perspective",
+        "xr": {
+          "desktop": "3D",
+          "xrCameraType": "world",
+          "phone": "AR",
+          "headset": "AR"
+        }
+      },
+      "components": {},
+      "geometry": null,
+      "id": "a608ddd9-9379-464d-966f-5d8d8674c83c",
+      "material": null,
+      "name": "AR / 3D World Camera",
+      "position": [
+        0,
+        0.15,
+        13.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "88453035-dc0f-486d-868a-8ff7c2fda864",
+      "order": 1.0
+    },
+    "47699d9e-18a5-4f88-a4f9-b8be92e8f74a": {
+      "components": {},
+      "geometry": null,
+      "id": "47699d9e-18a5-4f88-a4f9-b8be92e8f74a",
+      "light": {
+        "type": "ambient",
+        "intensity": 1.05,
+        "color": "#fffdf5"
+      },
+      "material": null,
+      "name": "Studio Ambient Light",
+      "position": [
+        0,
+        10,
+        5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "88453035-dc0f-486d-868a-8ff7c2fda864",
+      "order": 0.2
+    },
+    "ac1989e3-3b71-49e2-a05f-e682aeb18c36": {
+      "components": {},
+      "geometry": null,
+      "id": "ac1989e3-3b71-49e2-a05f-e682aeb18c36",
+      "light": {
+        "intensity": 3.8,
+        "type": "directional",
+        "color": "#fffef8"
+      },
+      "material": null,
+      "name": "Directional Key Light",
+      "position": [
+        6,
+        9,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "88453035-dc0f-486d-868a-8ff7c2fda864",
+      "order": 0.3
+    },
+    "bc1989e3-3b71-49e2-a05f-e682aeb18c37": {
+      "components": {},
+      "geometry": null,
+      "id": "bc1989e3-3b71-49e2-a05f-e682aeb18c37",
+      "light": {
+        "intensity": 2.9,
+        "type": "directional",
+        "color": "#ffe999"
+      },
+      "material": null,
+      "name": "Rim Light Left",
+      "position": [
+        -9,
+        4,
+        -6
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "88453035-dc0f-486d-868a-8ff7c2fda864",
+      "order": 0.4
+    },
+    "cc1989e3-3b71-49e2-a05f-e682aeb18c38": {
+      "components": {},
+      "geometry": null,
+      "id": "cc1989e3-3b71-49e2-a05f-e682aeb18c38",
+      "light": {
+        "intensity": 2.4,
+        "type": "directional",
+        "color": "#fff3c4"
+      },
+      "material": null,
+      "name": "Rim Light Bottom",
+      "position": [
+        0,
+        -8,
+        6
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "88453035-dc0f-486d-868a-8ff7c2fda864",
+      "order": 0.5
+    },
+    "b19a7e20-3b1a-4f51-b883-7fca385906da": {
+      "components": {
+        "1f729e41-0b54-482a-a53b-e18e8d89cb21": {
+          "id": "1f729e41-0b54-482a-a53b-e18e8d89cb21",
+          "name": "image-target-sync",
+          "parameters": {
+            "targetName": "braven-marker"
+          }
+        }
+      },
+      "geometry": null,
+      "id": "b19a7e20-3b1a-4f51-b883-7fca385906da",
+      "imageTarget": {
+        "name": "braven-marker"
+      },
+      "material": null,
+      "name": "Braven AR Marker Anchor",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "88453035-dc0f-486d-868a-8ff7c2fda864",
+      "order": 2.0
+    },
+    "c20b8f31-4c2b-4a62-c994-8adb496017eb": {
+      "components": {
+        "2e83af52-1c65-493b-b64c-f29f9e90dc32": {
+          "id": "2e83af52-1c65-493b-b64c-f29f9e90dc32",
+          "name": "braven-scene-controller",
+          "parameters": {
+            "floatSpeed": 1.4,
+            "floatAmp": 0.22,
+            "ringSpeed": 1.0,
+            "bloomStrength": 0.45
+          }
+        }
+      },
+      "geometry": null,
+      "gltfModel": {
+        "src": "assets/braven-logo.glb"
+      },
+      "id": "c20b8f31-4c2b-4a62-c994-8adb496017eb",
+      "material": null,
+      "name": "Braven 3D Metallic Gold PBR Logo",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "b19a7e20-3b1a-4f51-b883-7fca385906da",
+      "order": 2.1
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f001": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed41": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed41",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "slideDuration": 7.0,
+            "uiAmp": 1.4,
+            "panelType": "top-telemetry"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 6.4,
+        "height": 1.15
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f001",
+      "material": null,
+      "name": "Top Telemetry Ribbon Panel",
+      "position": [
+        0,
+        3.4,
+        0.3
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "b19a7e20-3b1a-4f51-b883-7fca385906da",
+      "order": 2.2
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f002": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed42": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed42",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "slideDuration": 7.0,
+            "uiAmp": 1.4,
+            "panelType": "card-01"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 3.6,
+        "height": 2.0
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f002",
+      "material": null,
+      "name": "Left Column - Card 01: Executive Suites",
+      "position": [
+        -4.5,
+        1.15,
+        0.2
+      ],
+      "rotation": [
+        0,
+        0.1132,
+        0,
+        0.9936
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "b19a7e20-3b1a-4f51-b883-7fca385906da",
+      "order": 2.3
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f003": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed43": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed43",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "slideDuration": 7.0,
+            "uiAmp": 1.4,
+            "panelType": "card-02"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 3.6,
+        "height": 2.0
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f003",
+      "material": null,
+      "name": "Left Column - Card 02: Security & Access",
+      "position": [
+        -4.5,
+        -1.05,
+        0.2
+      ],
+      "rotation": [
+        0,
+        0.1132,
+        0,
+        0.9936
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "b19a7e20-3b1a-4f51-b883-7fca385906da",
+      "order": 2.4
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f004": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed44": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed44",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "slideDuration": 7.0,
+            "uiAmp": 1.4,
+            "panelType": "card-03"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 3.6,
+        "height": 2.0
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f004",
+      "material": null,
+      "name": "Right Column - Card 03: Architecture",
+      "position": [
+        4.5,
+        1.15,
+        0.2
+      ],
+      "rotation": [
+        0,
+        -0.1132,
+        0,
+        0.9936
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "b19a7e20-3b1a-4f51-b883-7fca385906da",
+      "order": 2.5
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f005": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed45": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed45",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "slideDuration": 7.0,
+            "uiAmp": 1.4,
+            "panelType": "card-04"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 3.6,
+        "height": 2.0
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f005",
+      "material": null,
+      "name": "Right Column - Card 04: Instant Deployment",
+      "position": [
+        4.5,
+        -1.05,
+        0.2
+      ],
+      "rotation": [
+        0,
+        -0.1132,
+        0,
+        0.9936
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "b19a7e20-3b1a-4f51-b883-7fca385906da",
+      "order": 2.6
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f006": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed46": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed46",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "slideDuration": 7.0,
+            "uiAmp": 1.4,
+            "panelType": "bottom-nav"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 7.2,
+        "height": 1.15
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f006",
+      "material": null,
+      "name": "Bottom Navigation Deck Panel",
+      "position": [
+        0,
+        -3.3,
+        0.3
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "b19a7e20-3b1a-4f51-b883-7fca385906da",
+      "order": 2.7
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f007": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed47": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed47",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "panelType": "btn-prev"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 1.2,
+        "height": 0.5
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f007",
+      "material": null,
+      "name": "Nav Button: ◄ PREV",
+      "position": [
+        -2.5,
+        0,
+        0.04
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f006",
+      "order": 2.71
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f008": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed48": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed48",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "panelType": "btn-autoplay"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 1.5,
+        "height": 0.45
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f008",
+      "material": null,
+      "name": "Nav Button: Autoplay Toggle",
+      "position": [
+        -0.8,
+        0.2,
+        0.04
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f006",
+      "order": 2.72
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f009": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed49": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed49",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "panelType": "sector-dots"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 2.2,
+        "height": 0.45
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f009",
+      "material": null,
+      "name": "Tachometer Progress & 6 Sector Dots",
+      "position": [
+        0.5,
+        -0.15,
+        0.04
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f006",
+      "order": 2.73
+    },
+    "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f010": {
+      "components": {
+        "3f94ba63-2d76-404c-c75d-03a0af01ed50": {
+          "id": "3f94ba63-2d76-404c-c75d-03a0af01ed50",
+          "name": "world-canvas-signage",
+          "parameters": {
+            "panelType": "btn-next"
+          }
+        }
+      },
+      "geometry": {
+        "type": "plane",
+        "width": 1.2,
+        "height": 0.5
+      },
+      "id": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f010",
+      "material": null,
+      "name": "Nav Button: NEXT ►",
+      "position": [
+        2.5,
+        0,
+        0.04
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "parentId": "e41d8b21-6c1f-4f2a-b4e8-8c11aa50f006",
+      "order": 2.74
+    }
+  },
+  "spaces": {
+    "88453035-dc0f-486d-868a-8ff7c2fda864": {
+      "id": "88453035-dc0f-486d-868a-8ff7c2fda864",
+      "name": "Default Space",
+      "activeCamera": "a608ddd9-9379-464d-966f-5d8d8674c83c"
+    }
+  },
+  "entrySpaceId": "88453035-dc0f-486d-868a-8ff7c2fda864"
+}

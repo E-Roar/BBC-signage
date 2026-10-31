@@ -1,0 +1,18 @@
+{
+  "name": "BRAVEN Business Center — 8th Wall AR Signage",
+  "short_name": "BRAVEN AR",
+  "description": "3D Metallic Gold PBR Logo & World Canvas Smart Signage with 8th Wall Image Tracking AR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050403",
+  "theme_color": "#E5B84B",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/braven-marker.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
